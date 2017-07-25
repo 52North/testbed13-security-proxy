@@ -16,41 +16,76 @@
  */
 package org.n52.securityproxy.service;
 
-import javax.servlet.http.HttpServlet;
+import java.util.Base64;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.n52.geoprocessing.oauth2.TokenDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.context.ServletConfigAware;
+import org.springframework.web.context.ServletContextAware;
+
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 @RequestMapping(value = "/service", consumes = "*/*", produces = "*/*")
-public class Service extends HttpServlet {
-
-    /**
-     *
-     */
-    private static final long serialVersionUID = 8762101989631385060L;
+public class Service implements ServletContextAware, ServletConfigAware {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Service.class);
+    
+    private ServletContext ctx;
+    
+    private ObjectMapper m;
+  
+    public void init() {
 
-    @RequestMapping(value = "{serviceId}", method = RequestMethod.GET)
-    public void get(@PathVariable String serviceId){
-        LOGGER.info("Incoming request for service with id: " + serviceId);
+        m = new ObjectMapper();
     }
 
-//    @Override
-//    protected void doGet(HttpServletRequest req,
-//            HttpServletResponse resp) throws ServletException, IOException {
-//        req.get
-//    }
-//
-//    @Override
-//    protected void doPost(HttpServletRequest req,
-//            HttpServletResponse resp) throws ServletException, IOException {
-//        super.doPost(req, resp);
-//    }
+    @RequestMapping(value = "{serviceId}", method = RequestMethod.GET)
+    public void get(@PathVariable String serviceId, HttpServletRequest req,
+            HttpServletResponse res) throws Exception{
+        
+        LOGGER.info("Incoming request for service with id: " + serviceId);
+        
+        String token = req.getHeader("Authorization");
+        
+        if(token == null){
+            LOGGER.info("No token was send.");
+            return;
+        }
+        
+        DecodedJWT jwt = new TokenDecoder(ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem")).decodeToken(token, "https://bpross-52n.eu.auth0.com/");
+        
+        String base64EncodedPayload = jwt.getPayload();
+        
+        byte[] decodedPayloadByteArray = Base64.getDecoder().decode(base64EncodedPayload);
+        
+        JsonNode rootNode = m.readTree(new String(decodedPayloadByteArray));
+        
+        JsonNode scopeNode = rootNode.findPath("scope");
+        
+        String scopeText = scopeNode.textValue();
+        
+        LOGGER.info(scopeText);
+    }
+
+    @Override
+    public void setServletConfig(ServletConfig arg0) { }
+
+    @Override
+    public void setServletContext(ServletContext arg0) {
+        this.ctx = arg0;
+    }
 
 }
