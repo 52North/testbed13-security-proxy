@@ -1,0 +1,151 @@
+/*
+ * Copyright 2017-2017 52°North Initiative for Geospatial Open Source
+ * Software GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.n52.securityproxy.service.util;
+
+import java.io.InputStream;
+
+import org.n52.securityproxy.service.util.Constants.ServiceType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+/**
+ * configuration read from config.json in WEB-INF/conf
+ *
+ * @author staschc
+ *
+ */
+public class SecurityProxyConfiguration {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityProxyConfiguration.class);
+
+    private String authorizationServer;
+
+    private ServiceType serviceType;
+
+    private String backendServiceURL;
+
+    private static SecurityProxyConfiguration instance;
+
+    private boolean oauthEnabled;
+
+    private boolean authorizeDescribeProcess;
+
+    private boolean authorizeDescribeProcessID;
+
+    private boolean authorizeExecute;
+
+    private boolean authorizeExecuteProcessID;
+
+    private boolean authorizeGetFeature;
+
+    private boolean authorizeDescribeFeatureType;
+
+    private boolean certificateEnabled;
+
+
+
+    private SecurityProxyConfiguration(InputStream configJSON) {
+        parseConfig(configJSON);
+    }
+
+    public static SecurityProxyConfiguration getInstance(InputStream configJSON) {
+        if (instance != null) {
+            return instance;
+        } else {
+            instance = new SecurityProxyConfiguration(configJSON);
+            return instance;
+        }
+
+    }
+
+    public static SecurityProxyConfiguration getInstance() {
+        if (instance == null) {
+            throw new RuntimeException("SecurityProxyConfiguration not initialized!");
+        } else {
+            return instance;
+        }
+
+    }
+
+    public String getAuthorizationServer() {
+        return authorizationServer;
+    }
+
+    public ServiceType getServiceType() {
+        return serviceType;
+    }
+
+    public String getBackendServiceURL() {
+        return backendServiceURL;
+    }
+
+    public boolean isOauthEnabled() {
+        return oauthEnabled;
+    }
+
+    public boolean isCertificateEnabled() {
+        return certificateEnabled;
+    }
+
+    public boolean isAuthorizeDescribeProcess() {
+        return authorizeDescribeProcess;
+    }
+
+    public boolean isAuthorizeDescribeProcessID() {
+        return authorizeDescribeProcessID;
+    }
+
+    public boolean isAuthorizeExecute() {
+        return authorizeExecute;
+    }
+
+    public boolean isAuthorizeExecuteProcessID() {
+        return authorizeExecuteProcessID;
+    }
+
+    public boolean isAuthorizeGetFeature() {
+        return authorizeGetFeature;
+    }
+
+    public boolean isAuthorizeDescribeFeatureType() {
+        return authorizeDescribeFeatureType;
+    }
+
+    private void parseConfig(InputStream configJSON) {
+        ObjectMapper m = new ObjectMapper();
+        try {
+            JsonNode root = m.readTree(configJSON);
+            authorizationServer = root.findPath("authorizationServer").asText();
+            serviceType = ServiceType.valueOf(root.findPath("serviceType").asText());
+            backendServiceURL = root.findPath("backendServiceURL").asText();
+            oauthEnabled = root.findPath("OAuthEnabled").asBoolean();
+            certificateEnabled = root.findPath("certificateEnabled").asBoolean();
+            authorizeDescribeProcess = root.findPath("authorizeDescribeProcess").asBoolean();
+            authorizeDescribeProcessID = root.findPath("authorizeDescribeProcessIdentifier").asBoolean();
+            authorizeExecute = root.findPath("authorizeExecute").asBoolean();
+            authorizeGetFeature = root.findPath("authorizeGetFeature").asBoolean();
+            authorizeDescribeFeatureType = root.findPath("authorizeDescribeFeatureType").asBoolean();
+            authorizeExecuteProcessID = root.findPath("authorizeExecuteProcessIdentifier").asBoolean();
+        } catch (Exception e) {
+            LOGGER.error("Error while reading SecurityProxyConfiguration!");
+            throw new RuntimeException("Error while reading SecurityProxyConfiguration!");
+        }
+    }
+}

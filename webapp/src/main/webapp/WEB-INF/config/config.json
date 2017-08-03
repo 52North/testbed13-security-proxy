@@ -1,0 +1,18 @@
+{
+  
+  "serviceType":"wps",
+  "backendServiceURL":"http://ows.dev.52north.org:8080/javaps/service",
+  "OAuth":{
+  	"OAuthEnabled":true,
+  	"authorizationServer":"http://my.server.com/authorize",
+  	"authorizeDescribeProcess":true,
+  	"authorizeDescribeProcessIdentifier":true,
+  	"authorizeExecute":true,
+  	"authorizeExecuteProcessIdentifier":true,
+  	"authorizeDescribeFeatureType":true,
+  	"authorizeGetFeature":true
+  },
+  "certificate":{
+  	"certificateEnabled": false
+  }
+}

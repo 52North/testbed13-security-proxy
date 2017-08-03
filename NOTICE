@@ -46,6 +46,11 @@ This project includes:
   Logback Classic Module under Eclipse Public License - v 1.0 or GNU Lesser General Public License
   Logback Core Module under Eclipse Public License - v 1.0 or GNU Lesser General Public License
   oauth-test under Apache License, Version 2.0
+  OGC Filter schema (spec. v2.0) under The Apache Software License, Version 2.0
+  OGC OWS schema (spec. v1.1.0) under The Apache Software License, Version 2.0
+  OGC OWS schema (spec. v2.0) under The Apache Software License, Version 2.0
+  OGC WFS schema (spec. v2.0.0) under The Apache Software License, Version 2.0
+  OGC WPS schema (spec. v2.0) under The Apache Software License, Version 2.0
   OkHttp under Apache 2.0
   OkHttp Logging Interceptor under Apache 2.0
   Okio under Apache 2.0
@@ -60,7 +65,11 @@ This project includes:
   Spring Core under The Apache Software License, Version 2.0
   Spring Expression Language (SpEL) under The Apache Software License, Version 2.0
   Spring Web under The Apache Software License, Version 2.0
+  Spring Web MVC under The Apache Software License, Version 2.0
+  StAX API under The Apache Software License, Version 2.0
   unirest-java under MIT
+  W3C xlink schema (spec. v1.1.0) under The Apache Software License, Version 2.0
   xml-matchers under Apache License, Version 2.0
+  XmlBeans under The Apache Software License, Version 2.0
   XMLUnit for Java under BSD License
 
