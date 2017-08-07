@@ -16,6 +16,9 @@
  */
 package org.n52.securityproxy.service.handler;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.opengis.ows.x20.DomainType;
 import net.opengis.ows.x20.MetadataType;
 import net.opengis.ows.x20.OperationDocument.Operation;
@@ -26,24 +29,29 @@ import net.opengis.wps.x20.CapabilitiesDocument;
 import org.n52.securityproxy.service.util.SecurityProxyConfiguration;
 import org.n52.securityproxy.service.util.Constants.RequestType;
 
-
 /**
  *
- * provides methods for injecting security information in Capabilities of OGC WFS and WPS
+ * provides methods for injecting security information in Capabilities of OGC
+ * WFS and WPS
  *
  * @author staschc
  */
 public class CapabilitiesInjector {
 
+    // //
+    // Constants for identifier for authentication/authorization method as
+    // defined in OGC Testbed 12
+    private static final String REF_BEARER = "https://www.tb13.secure-dimensions.de/authnCodeList#OAUTH2_BEARER_TOKEN";
 
-    ////
-    //Constants for identifier for authentication/authorization method as defined in OGC Testbed 12
-    private static final String REF_BEARER = "http://tb12.opengis.net/security/authCodeList#OAUTH2_BEARER_TOKEN";
     private static final String REF_CERT = "http://tb12.opengis.net/security/authCodeList#CLIENT_CERTIFICATE";
-    private static final String BEARER_URN = "urn:ogc:def:tb12:ietf:6750:bearer_token";
+
+    private static final String BEARER_URN = "urn:ogc:def:security:authentication:ietf:6750:Bearer";
+
     private static final String CERT_URN = "urn:ogc:def:tb12:ietf:5246:client_certificate";
 
-    //config
+    private static final String SCOPES_URN = "urn:ogc:def:security:oauth2:scopes";
+
+    // config
     private SecurityProxyConfiguration conf;
 
     /**
@@ -55,27 +63,45 @@ public class CapabilitiesInjector {
     }
 
     /**
-     * injects security information in operations metadata of capabilities as defined in OGC Testbed 12
+     * injects security information in operations metadata of capabilities as
+     * defined in OGC Testbed 12
      *
      * @param caps
-     *                 XMLBeans representation of Capabilities document
+     *            XMLBeans representation of Capabilities document
      *
      */
     public void injectWPSCaps(CapabilitiesDocument caps) {
         Operation[] operationArray = caps.getCapabilities().getOperationsMetadata().getOperationArray();
+
         for (Operation operation : operationArray) {
             String name = operation.getName();
             if (name.equals(RequestType.DescribeProcess.toString())) {
+                List<String> scopes = new ArrayList<String>();
                 if (conf.isAuthorizeDescribeProcess()) {
-                    createBearerConstraint(operation);
+                    scopes.add("DescribeProcess");
+                    if (conf.isAuthorizeDescribeProcessID()) {
+                        List<String> processIDs = conf.getProcessIdentifiers();
+                        for (String processID : processIDs) {
+                            scopes.add("DescribeProcess/ProcessID="+processID);
+                        }
+                    }
+                    createBearerConstraint(operation,scopes);
                 }
                 // TODO reprogram with ACL!!
                 if (conf.isCertificateEnabled()) {
                     createCertificateConstraint(operation);
                 }
             } else if (name.equals(RequestType.Execute.toString())) {
+                List<String> scopes = new ArrayList<String>();
                 if (conf.isAuthorizeExecute()) {
-                    createBearerConstraint(operation);
+                    scopes.add("Execute");
+                    if (conf.isAuthorizeDescribeProcessID()) {
+                        List<String> processIDs = conf.getProcessIdentifiers();
+                        for (String processID : processIDs) {
+                            scopes.add("Execute/ProcessID="+processID);
+                        }
+                    }
+                    createBearerConstraint(operation,scopes);
                 }
                 // TODO reprogram with ACL!!
                 if (conf.isCertificateEnabled()) {
@@ -86,23 +112,32 @@ public class CapabilitiesInjector {
     }
 
     /**
-    * injects security information in operations metadata of WFS capabilities as defined in OGC Testbed 12
-    *
-    * @param caps
-    *                 XMLBeans representation of Capabilities document
-    *
-    */
+     * injects security information in operations metadata of WFS capabilities
+     * as defined in OGC Testbed 12
+     *
+     * @param caps
+     *            XMLBeans representation of Capabilities document
+     *
+     */
     public void injectWFSCaps(WFSCapabilitiesDocument caps) {
         if (conf.isAuthorizeExecute()) {
             Operation[] operationArray =
                     (Operation[]) caps.getWFSCapabilities().getOperationsMetadata().getOperationArray();
+            List<String> scopes = new ArrayList<String>();
             for (Operation operation : operationArray) {
                 String name = operation.getName();
 
                 if (name.equals(RequestType.DescribeFeatureType.toString())) {
 
                     if (conf.isAuthorizeDescribeFeatureType()) {
-                        createBearerConstraint(operation);
+                        scopes.add("DescribeFeatureType");
+                        if (conf.isAuthorizeDescribeFeatureTypeName()) {
+                            List<String> typeNames = conf.getTypeNames();
+                            for (String typeName : typeNames) {
+                                scopes.add("DescribeFeatureType/TypeName="+typeName);
+                            }
+                        }
+                        createBearerConstraint(operation, scopes);
                     }
 
                     // TODO reprogram with ACL!!
@@ -114,7 +149,14 @@ public class CapabilitiesInjector {
                 else if (name.equals(RequestType.GetFeature.toString())) {
 
                     if (conf.isAuthorizeGetFeature()) {
-                        createBearerConstraint(operation);
+                        scopes.add("GetFeature");
+                        if (conf.isAuthorizeDescribeFeatureTypeName()) {
+                            List<String> typeNames = conf.getTypeNames();
+                            for (String typeName : typeNames) {
+                                scopes.add("GetFeature/TypeName="+typeName);
+                            }
+                        }
+                        createBearerConstraint(operation,scopes);
                     }
 
                     // TODO reprogram with ACL!!
@@ -131,14 +173,25 @@ public class CapabilitiesInjector {
      *
      * @param operation
      */
-    private void createBearerConstraint(Operation operation) {
+    private void createBearerConstraint(Operation operation,
+            List<String> scopes) {
+
+        //add new bearer token constraint
         DomainType constraint = operation.addNewConstraint();
         ValuesReference valueReference = constraint.addNewValuesReference();
         valueReference.setReference(REF_BEARER);
         valueReference.setStringValue(BEARER_URN);
+        //TODO check whether Authorization server should be provided like this
         MetadataType metadata = constraint.addNewMetadata();
         metadata.setRole("AuthorizationServer");
         metadata.setHref(conf.getAuthorizationServer());
+
+        //add new scopes constraint
+        constraint = operation.addNewConstraint();
+        constraint.setName(SCOPES_URN);
+        for (String scope:scopes){
+            constraint.addNewAllowedValues().addNewValue().setStringValue(scope);
+        }
     }
 
     /**

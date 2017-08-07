@@ -17,7 +17,6 @@
 package org.n52.securityproxy.service;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletConfig;
@@ -128,7 +127,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
             if (config.isOauthEnabled()) {
 
                 OAuthHandler handler = new OAuthHandler();
-                handler.post(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"));
+                handler.post(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"),postRequest);
             }
 
         }
@@ -182,13 +181,9 @@ public class Service implements ServletContextAware, ServletConfigAware {
         }
     }
 
-    private void handleOperationResponse(ResponseEntity<String> resp, HttpServletResponse res) throws IOException{
-        HttpUtil.setHeaders(res, resp);
-        res.getWriter().write(resp.getBody());;
-    }
-
     private String replaceCapsURLs(String capsString){
-        //TODO implement
+        String backendURL = config.getBackendServiceURL();
+        capsString = capsString.replaceAll(backendURL, config.getSecurityProxyURL());
         return capsString;
     }
 

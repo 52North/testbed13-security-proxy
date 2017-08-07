@@ -1,16 +1,22 @@
 {
-  
   "serviceType":"wps",
   "backendServiceURL":"http://ows.dev.52north.org:8080/javaps/service",
+  "securityProxyURL":"http://localhost:8080/SecurityProxy/service/wps",
   "OAuth":{
   	"OAuthEnabled":true,
   	"authorizationServer":"http://my.server.com/authorize",
   	"authorizeDescribeProcess":true,
   	"authorizeDescribeProcessIdentifier":true,
+  	"processIdentifiers":[
+  	"org.n52.geoprocessing.geotools.algorithm.CoordinateTransformationAlgorithm"],
   	"authorizeExecute":true,
   	"authorizeExecuteProcessIdentifier":true,
   	"authorizeDescribeFeatureType":true,
-  	"authorizeGetFeature":true
+  	"authorizeDescribeFeatureTypeName":true,
+  	"authorizeGetFeature":true,
+  	"authorizeGetFeatureTypeName":true,
+  	"typeNames":[
+  	"tb13:tnm-manhattan-streets"]
   },
   "certificate":{
   	"certificateEnabled": false

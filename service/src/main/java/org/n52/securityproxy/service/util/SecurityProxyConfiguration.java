@@ -17,6 +17,9 @@
 package org.n52.securityproxy.service.util;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.n52.securityproxy.service.util.Constants.ServiceType;
 import org.slf4j.Logger;
@@ -41,6 +44,8 @@ public class SecurityProxyConfiguration {
 
     private String backendServiceURL;
 
+    private String securityProxyURL;
+
     private static SecurityProxyConfiguration instance;
 
     private boolean oauthEnabled;
@@ -58,6 +63,14 @@ public class SecurityProxyConfiguration {
     private boolean authorizeDescribeFeatureType;
 
     private boolean certificateEnabled;
+
+    private List<String> processIdentifiers;
+
+    private List<String> typeNames;
+
+    private boolean authorizeGetFeatureTypeName;
+
+    private boolean authorizeDescribeFeatureTypeName;
 
 
 
@@ -135,17 +148,58 @@ public class SecurityProxyConfiguration {
             authorizationServer = root.findPath("authorizationServer").asText();
             serviceType = ServiceType.valueOf(root.findPath("serviceType").asText());
             backendServiceURL = root.findPath("backendServiceURL").asText();
+            securityProxyURL = root.findPath("securityProxyURL").asText();
             oauthEnabled = root.findPath("OAuthEnabled").asBoolean();
             certificateEnabled = root.findPath("certificateEnabled").asBoolean();
+            
             authorizeDescribeProcess = root.findPath("authorizeDescribeProcess").asBoolean();
             authorizeDescribeProcessID = root.findPath("authorizeDescribeProcessIdentifier").asBoolean();
+            
             authorizeExecute = root.findPath("authorizeExecute").asBoolean();
-            authorizeGetFeature = root.findPath("authorizeGetFeature").asBoolean();
-            authorizeDescribeFeatureType = root.findPath("authorizeDescribeFeatureType").asBoolean();
             authorizeExecuteProcessID = root.findPath("authorizeExecuteProcessIdentifier").asBoolean();
+            
+            authorizeGetFeature = root.findPath("authorizeGetFeature").asBoolean();
+            authorizeGetFeatureTypeName = root.findPath("authorizeGetFeatureTypeName").asBoolean();
+            
+            
+            authorizeDescribeFeatureType = root.findPath("authorizeDescribeFeatureType").asBoolean();
+            authorizeDescribeFeatureTypeName = root.findPath("authorizeDescribeFeatureTypeName").asBoolean();
+            
+            processIdentifiers = parseStringArray(root.findPath("processIdentifiers").elements());
+            typeNames = parseStringArray(root.findPath("typeNames").elements());
         } catch (Exception e) {
             LOGGER.error("Error while reading SecurityProxyConfiguration!");
             throw new RuntimeException("Error while reading SecurityProxyConfiguration!");
         }
+    }
+
+
+    private List<String> parseStringArray(Iterator<JsonNode> elements) {
+        List<String> strings = new ArrayList<String>();
+        while (elements.hasNext()){
+            strings.add(elements.next().asText());
+        }
+        return strings;
+
+    }
+
+    public String getSecurityProxyURL() {
+        return securityProxyURL;
+    }
+
+    public List<String> getProcessIdentifiers() {
+        return processIdentifiers;
+    }
+
+    public List<String> getTypeNames() {
+        return typeNames;
+    }
+
+    public boolean isAuthorizeGetFeatureTypeName() {
+        return authorizeGetFeatureTypeName;
+    }
+
+    public boolean isAuthorizeDescribeFeatureTypeName() {
+        return authorizeDescribeFeatureTypeName;
     }
 }
