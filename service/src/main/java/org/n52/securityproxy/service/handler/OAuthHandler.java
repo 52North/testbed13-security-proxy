@@ -18,6 +18,7 @@ package org.n52.securityproxy.service.handler;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -60,6 +61,9 @@ public class OAuthHandler {
     /**
      * constructor
      *
+     * @throws IOException
+     *             if parsing configuration fails
+     *
      */
     public OAuthHandler() throws IOException {
         config = SecurityProxyConfiguration.getInstance();
@@ -84,35 +88,49 @@ public class OAuthHandler {
             HttpServletResponse res,
             InputStream publicKey) throws IOException {
         String token = req.getHeader("Authorization");
-        List<String> scopes = new ArrayList<>();
+        List<String> scopes = null;
         String requestParam = req.getParameter("request");
         ResponseEntity<String> response = null;
-        if (token == null) {
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
-
-        try {
-            scopes = OAuthUtil.getScopesFromToken(publicKey, token, "https://bpross-52n.eu.auth0.com/");
-        } catch (GeneralSecurityException | IOException e) {
-            LOGGER.error("Error while validating and parsing token", e);
-            throw new RuntimeException("Error while validating and parsing token", e);
-        }
 
         if (config.getServiceType() == ServiceType.wps) {
             // Execute operation
-            if (requestParam.equals(RequestType.Execute.toString()) && config.isAuthorizeExecute()) {
-                String processID = req.getParameter("identifier");
-                if (checkExecuteScopes(scopes, processID, res)) {
+            if (requestParam.equals(RequestType.Execute.toString())) {
+
+                // needs authorization
+                if (config.isAuthorizeExecute()) {
+                    String processID = req.getParameter("identifier");
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+                    if (checkExecuteScopes(scopes, processID, res)) {
+                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                    }
+                }
+
+                // no authorization
+                else {
                     response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
                 }
             }
 
             // DescribeProcess
-            else if (requestParam.equalsIgnoreCase(RequestType.DescribeProcess.toString())
-                    && config.isAuthorizeDescribeProcess()) {
-                String processID = req.getParameter("identifier");
-                if (checkDescribeProcessScopes(scopes, processID, res)) {
+            else if (requestParam.equalsIgnoreCase(RequestType.DescribeProcess.toString())) {
+                // needs authorization
+                if (config.isAuthorizeDescribeProcess()) {
+                    String processID = req.getParameter("identifier");
+
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+                    if (checkDescribeProcessScopes(scopes, processID, res)) {
+                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                    }
+                }
+
+                // no authorization
+                else {
                     response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
                 }
             }
@@ -124,15 +142,30 @@ public class OAuthHandler {
             typeNames.add(typeName);
 
             // GetFeature operation
-            if (requestParam.equals(RequestType.GetFeature.toString()) && config.isAuthorizeGetFeature()) {
-                if (checkGetFeatureScopes(scopes, typeNames, res)) {
+            if (requestParam.equals(RequestType.GetFeature.toString())) {
+                if (config.isAuthorizeGetFeature()) {
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+                    if (checkGetFeatureScopes(scopes, typeNames, res)) {
+                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                    }
+                } else {
                     response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
                 }
             }
 
-            if (requestParam.equals(RequestType.DescribeFeatureType.toString())
-                    && config.isAuthorizeDescribeFeatureType()) {
-                if (checkDescribeFeatureTypeScopes(scopes, typeNames, res)) {
+            if (requestParam.equals(RequestType.DescribeFeatureType.toString())) {
+                if (config.isAuthorizeDescribeFeatureType()) {
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+                    if (checkDescribeFeatureTypeScopes(scopes, typeNames, res)) {
+                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                    }
+                } else {
                     response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
                 }
             }
@@ -142,6 +175,7 @@ public class OAuthHandler {
         if (response != null) {
             handleOperationResponse(response, res);
         }
+        return;
 
     }
 
@@ -156,7 +190,9 @@ public class OAuthHandler {
      * @param publicKey
      *            stream to public key that is needed for token verification
      * @param postRequest
+     *            request XML bean
      * @throws IOException
+     *             if reading token or XML request fails
      *
      */
     public void post(HttpServletRequest req,
@@ -164,51 +200,54 @@ public class OAuthHandler {
             InputStream publicKey,
             XmlObject postRequest) throws IOException {
         String token = req.getHeader("Authorization");
-        List<String> scopes = new ArrayList<>();
+        List<String> scopes = null;
         ResponseEntity<String> response = null;
-
-        // check token first
-        if (token == null) {
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
-
-        // extract scopes
-        try {
-            scopes = OAuthUtil.getScopesFromToken(publicKey, token, "https://bpross-52n.eu.auth0.com/");
-        } catch (IOException e) {
-            LOGGER.error("Error while validating and parsing token", e);
-            throw new RuntimeException("Error while validating and parsing token", e);
-        } catch (GeneralSecurityException ge) {
-            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.getWriter().write(ge.getMessage());
-            return;
-        }
 
         // WPS
         if (config.getServiceType() == ServiceType.wps) {
 
             // Execute operation
-            if (postRequest instanceof ExecuteDocument && config.isAuthorizeExecute()) {
-                String processID = ((ExecuteDocument) postRequest).getExecute().getIdentifier().getStringValue();
-                if (checkExecuteScopes(scopes, processID, res)) {
+            if (postRequest instanceof ExecuteDocument) {
+                if (config.isAuthorizeExecute()) {
+                    String processID = ((ExecuteDocument) postRequest).getExecute().getIdentifier().getStringValue();
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+
+                    // check scopes and execute, if authorized
+                    if (checkExecuteScopes(scopes, processID, res)) {
+                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                    }
+                } else {
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                 }
             }
 
             // DescribeProcess
-            else if (postRequest instanceof DescribeProcessDocument && config.isAuthorizeDescribeProcess()) {
-                // TODO currently only single processIdentifier supported!
-                String processID = null;
-                CodeType[] processIDArray =
-                        ((DescribeProcessDocument) postRequest).getDescribeProcess().getIdentifierArray();
-                if (processIDArray.length == 1) {
-                    processID = processIDArray[0].getStringValue();
-                } else {
-                    throw new RuntimeException("Currently only one identifier supported for DescribeProcess operation!");
-                }
+            else if (postRequest instanceof DescribeProcessDocument) {
 
-                if (checkDescribeProcessScopes(scopes, processID, res)) {
+                if (config.isAuthorizeDescribeProcess()) {
+                    // TODO currently only single processIdentifier supported!
+                    String processID = null;
+                    CodeType[] processIDArray =
+                            ((DescribeProcessDocument) postRequest).getDescribeProcess().getIdentifierArray();
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+                    if (processIDArray.length == 1) {
+                        processID = processIDArray[0].getStringValue();
+                    } else {
+                        throw new RuntimeException(
+                                "Currently only one identifier supported for DescribeProcess operation!");
+                    }
+
+                    // check scopes and execute, if authorized
+                    if (checkDescribeProcessScopes(scopes, processID, res)) {
+                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                    }
+                } else {
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                 }
             }
@@ -218,39 +257,66 @@ public class OAuthHandler {
         else if (config.getServiceType() == ServiceType.wfs) {
 
             // GetFeature operation
-            if (postRequest instanceof GetFeatureDocument && config.isAuthorizeGetFeature()) {
-                List<String> typeNames = new ArrayList<String>();
-                AbstractQueryExpressionType[] queries =
-                        ((GetFeatureDocument) postRequest).getGetFeature().getAbstractQueryExpressionArray();
-                for (AbstractQueryExpressionType query : queries) {
-                    QueryType expr = (QueryType) query;
-                    Iterator featureTypes = expr.getTypeNames().iterator();
-                    while (featureTypes.hasNext()) {
-                        String typeName = (String) featureTypes.next();
-                        typeNames.add(typeName);
+            if (postRequest instanceof GetFeatureDocument) {
+
+                if (config.isAuthorizeGetFeature()) {
+
+                    // extract typeNames
+                    List<String> typeNames = new ArrayList<String>();
+                    AbstractQueryExpressionType[] queries =
+                            ((GetFeatureDocument) postRequest).getGetFeature().getAbstractQueryExpressionArray();
+                    for (AbstractQueryExpressionType query : queries) {
+                        QueryType expr = (QueryType) query;
+                        Iterator featureTypes = expr.getTypeNames().iterator();
+                        while (featureTypes.hasNext()) {
+                            String typeName = (String) featureTypes.next();
+                            typeNames.add(typeName);
+                        }
+
                     }
 
-                }
-                if (checkGetFeatureScopes(scopes, typeNames, res)) {
+                    // check token
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+
+                    // check scopes and execute, if authorized
+                    if (checkGetFeatureScopes(scopes, typeNames, res)) {
+                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                    }
+                } else {
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                 }
             }
 
             // DescribeFeatureType operation
-            else if (postRequest instanceof DescribeFeatureTypeDocument && config.isAuthorizeDescribeFeatureType()) {
-                List<String> typeNames = new ArrayList<String>();
-                AbstractQueryExpressionType[] queries =
-                        ((GetFeatureDocument) postRequest).getGetFeature().getAbstractQueryExpressionArray();
-                for (AbstractQueryExpressionType query : queries) {
-                    QueryType expr = (QueryType) query;
-                    Iterator featureTypes = expr.getTypeNames().iterator();
-                    while (featureTypes.hasNext()) {
-                        String typeName = (String) featureTypes.next();
-                        typeNames.add(typeName);
+            else if (postRequest instanceof DescribeFeatureTypeDocument) {
+                if (config.isAuthorizeDescribeFeatureType()) {
+                    List<String> typeNames = new ArrayList<String>();
+                    AbstractQueryExpressionType[] queries =
+                            ((GetFeatureDocument) postRequest).getGetFeature().getAbstractQueryExpressionArray();
+                    for (AbstractQueryExpressionType query : queries) {
+                        QueryType expr = (QueryType) query;
+                        Iterator featureTypes = expr.getTypeNames().iterator();
+                        while (featureTypes.hasNext()) {
+                            String typeName = (String) featureTypes.next();
+                            typeNames.add(typeName);
+                        }
+
                     }
 
-                }
-                if (checkDescribeFeatureTypeScopes(scopes, typeNames, res)) {
+                    // check token
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+
+                    // check scopes and execute, if authorized
+                    if (checkDescribeFeatureTypeScopes(scopes, typeNames, res)) {
+                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                    }
+                } else {
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                 }
             }
@@ -260,13 +326,18 @@ public class OAuthHandler {
         if (response != null) {
             handleOperationResponse(response, res);
         }
+        return;
+
 
     }
 
     private void handleOperationResponse(ResponseEntity<String> resp,
             HttpServletResponse res) throws IOException {
         HttpUtil.setHeaders(res, resp);
-        res.getWriter().write(resp.getBody());
+        String response = resp.getBody();
+        Writer writer = res.getWriter();
+        writer.write(response);
+
     }
 
     private boolean checkExecuteScopes(List<String> scopes,
@@ -302,14 +373,14 @@ public class OAuthHandler {
             HttpServletResponse res) throws IOException {
         if (!scopes.contains("DescribeProcess")) {
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            res.getWriter().write("No valid scope for Execute operation.");
+            res.getWriter().write("No valid scope for DescribeProcess operation.");
             return false;
         }
         if (config.isAuthorizeDescribeProcessID()) {
 
             if (!scopes.contains("DescribeProcess/ProcessID=" + processID)) {
                 res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                res.getWriter().write("No valid scope for Execute operation.");
+                res.getWriter().write("No valid scope for DescribeProcess operation.");
                 return false;
             }
         }
@@ -373,6 +444,24 @@ public class OAuthHandler {
             }
         }
         return true;
+    }
+
+    private List<String> checkToken(String token,
+            HttpServletResponse res,
+            InputStream publicKey) {
+        if (token == null) {
+            res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return null;
+        } else {
+            List<String> scopes;
+            try {
+                scopes = OAuthUtil.getScopesFromToken(publicKey, token, "https://bpross-52n.eu.auth0.com/");
+            } catch (GeneralSecurityException | IOException e) {
+                LOGGER.error("Error while validating and parsing token", e);
+                throw new RuntimeException("Error while validating and parsing token", e);
+            }
+            return scopes;
+        }
     }
 
 }

@@ -5,8 +5,8 @@
   "OAuth":{
   	"OAuthEnabled":true,
   	"authorizationServer":"http://my.server.com/authorize",
-  	"authorizeDescribeProcess":true,
-  	"authorizeDescribeProcessIdentifier":true,
+  	"authorizeDescribeProcess":false,
+  	"authorizeDescribeProcessIdentifier":false,
   	"processIdentifiers":[
   	"org.n52.geoprocessing.geotools.algorithm.CoordinateTransformationAlgorithm"],
   	"authorizeExecute":true,

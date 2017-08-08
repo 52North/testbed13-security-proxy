@@ -91,7 +91,10 @@ public class HttpUtil {
         Iterator<String> keyIterator = headers.keySet().iterator();
         while (keyIterator.hasNext()) {
             String key = keyIterator.next();
-            res.setHeader(key, headers.get(key).get(0));
+            //filter out Transfer-Encoding:chunked
+            if (!key.equals("Transfer-Encoding")){
+                res.setHeader(key, headers.get(key).get(0));
+            }
         }
     }
 }

@@ -91,7 +91,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
             if (config.isOauthEnabled()) {
 
                 OAuthHandler handler = new OAuthHandler();
-                handler.get(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"));
+               handler.get(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"));
             }
 
         }

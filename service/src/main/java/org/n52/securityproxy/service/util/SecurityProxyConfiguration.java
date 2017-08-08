@@ -151,20 +151,20 @@ public class SecurityProxyConfiguration {
             securityProxyURL = root.findPath("securityProxyURL").asText();
             oauthEnabled = root.findPath("OAuthEnabled").asBoolean();
             certificateEnabled = root.findPath("certificateEnabled").asBoolean();
-            
+
             authorizeDescribeProcess = root.findPath("authorizeDescribeProcess").asBoolean();
             authorizeDescribeProcessID = root.findPath("authorizeDescribeProcessIdentifier").asBoolean();
-            
+
             authorizeExecute = root.findPath("authorizeExecute").asBoolean();
             authorizeExecuteProcessID = root.findPath("authorizeExecuteProcessIdentifier").asBoolean();
-            
+
             authorizeGetFeature = root.findPath("authorizeGetFeature").asBoolean();
             authorizeGetFeatureTypeName = root.findPath("authorizeGetFeatureTypeName").asBoolean();
-            
-            
+
+
             authorizeDescribeFeatureType = root.findPath("authorizeDescribeFeatureType").asBoolean();
             authorizeDescribeFeatureTypeName = root.findPath("authorizeDescribeFeatureTypeName").asBoolean();
-            
+
             processIdentifiers = parseStringArray(root.findPath("processIdentifiers").elements());
             typeNames = parseStringArray(root.findPath("typeNames").elements());
         } catch (Exception e) {
