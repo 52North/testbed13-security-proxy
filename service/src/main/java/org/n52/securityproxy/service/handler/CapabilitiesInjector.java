@@ -19,6 +19,7 @@ package org.n52.securityproxy.service.handler;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.opengis.ows.x11.OperationDocument;
 import net.opengis.ows.x20.DomainType;
 import net.opengis.ows.x20.MetadataType;
 import net.opengis.ows.x20.OperationDocument.Operation;
@@ -82,10 +83,10 @@ public class CapabilitiesInjector {
                     if (conf.isAuthorizeDescribeProcessID()) {
                         List<String> processIDs = conf.getProcessIdentifiers();
                         for (String processID : processIDs) {
-                            scopes.add("DescribeProcess/ProcessID="+processID);
+                            scopes.add("DescribeProcess/ProcessID=" + processID);
                         }
                     }
-                    createBearerConstraint(operation,scopes);
+                    createBearerConstraint(operation, scopes);
                 }
                 // TODO reprogram with ACL!!
                 if (conf.isCertificateEnabled()) {
@@ -98,10 +99,10 @@ public class CapabilitiesInjector {
                     if (conf.isAuthorizeDescribeProcessID()) {
                         List<String> processIDs = conf.getProcessIdentifiers();
                         for (String processID : processIDs) {
-                            scopes.add("Execute/ProcessID="+processID);
+                            scopes.add("Execute/ProcessID=" + processID);
                         }
                     }
-                    createBearerConstraint(operation,scopes);
+                    createBearerConstraint(operation, scopes);
                 }
                 // TODO reprogram with ACL!!
                 if (conf.isCertificateEnabled()) {
@@ -120,52 +121,80 @@ public class CapabilitiesInjector {
      *
      */
     public void injectWFSCaps(WFSCapabilitiesDocument caps) {
-        if (conf.isAuthorizeExecute()) {
-            Operation[] operationArray =
-                    (Operation[]) caps.getWFSCapabilities().getOperationsMetadata().getOperationArray();
-            List<String> scopes = new ArrayList<String>();
-            for (Operation operation : operationArray) {
-                String name = operation.getName();
 
-                if (name.equals(RequestType.DescribeFeatureType.toString())) {
+        net.opengis.ows.x11.OperationDocument.Operation[] operationArray =
+                caps.getWFSCapabilities().getOperationsMetadata().getOperationArray();
+        List<String> scopes = new ArrayList<String>();
+        for (OperationDocument.Operation operation : operationArray) {
+            String name = operation.getName();
 
-                    if (conf.isAuthorizeDescribeFeatureType()) {
-                        scopes.add("DescribeFeatureType");
-                        if (conf.isAuthorizeDescribeFeatureTypeName()) {
-                            List<String> typeNames = conf.getTypeNames();
-                            for (String typeName : typeNames) {
-                                scopes.add("DescribeFeatureType/TypeName="+typeName);
-                            }
+            if (name.equals(RequestType.DescribeFeatureType.toString())) {
+
+                if (conf.isAuthorizeDescribeFeatureType()) {
+                    scopes.add("DescribeFeatureType");
+                    if (conf.isAuthorizeDescribeFeatureTypeName()) {
+                        List<String> typeNames = conf.getTypeNames();
+                        for (String typeName : typeNames) {
+                            scopes.add("DescribeFeatureType/TypeName=" + typeName);
                         }
-                        createBearerConstraint(operation, scopes);
                     }
-
-                    // TODO reprogram with ACL!!
-                    if (conf.isCertificateEnabled()) {
-                        createCertificateConstraint(operation);
-                    }
+                    createBearerConstraint(operation, scopes);
                 }
 
-                else if (name.equals(RequestType.GetFeature.toString())) {
+                // TODO reprogram with ACL!!
+                if (conf.isCertificateEnabled()) {
+                    createCertificateConstraint(operation);
+                }
+            }
 
-                    if (conf.isAuthorizeGetFeature()) {
-                        scopes.add("GetFeature");
-                        if (conf.isAuthorizeDescribeFeatureTypeName()) {
-                            List<String> typeNames = conf.getTypeNames();
-                            for (String typeName : typeNames) {
-                                scopes.add("GetFeature/TypeName="+typeName);
-                            }
+            else if (name.equals(RequestType.GetFeature.toString())) {
+
+                if (conf.isAuthorizeGetFeature()) {
+                    scopes.add("GetFeature");
+                    if (conf.isAuthorizeDescribeFeatureTypeName()) {
+                        List<String> typeNames = conf.getTypeNames();
+                        for (String typeName : typeNames) {
+                            scopes.add("GetFeature/TypeName=" + typeName);
                         }
-                        createBearerConstraint(operation,scopes);
                     }
+                    createBearerConstraint(operation, scopes);
+                }
 
-                    // TODO reprogram with ACL!!
-                    if (conf.isCertificateEnabled()) {
-                        createCertificateConstraint(operation);
-                    }
+                // TODO reprogram with ACL!!
+                if (conf.isCertificateEnabled()) {
+                    createCertificateConstraint(operation);
                 }
             }
         }
+
+    }
+
+    private void createCertificateConstraint(net.opengis.ows.x11.OperationDocument.Operation operation) {
+        net.opengis.ows.x11.DomainType constraint = operation.addNewConstraint();
+        net.opengis.ows.x11.ValuesReferenceDocument.ValuesReference valueReference = constraint.addNewValuesReference();
+        valueReference.setReference(REF_CERT);
+        valueReference.setStringValue(CERT_URN);
+    }
+
+    private void createBearerConstraint(net.opengis.ows.x11.OperationDocument.Operation operation,
+            List<String> scopes) {
+        // add new bearer token constraint
+        net.opengis.ows.x11.DomainType constraint = operation.addNewConstraint();
+        net.opengis.ows.x11.ValuesReferenceDocument.ValuesReference valueReference = constraint.addNewValuesReference();
+        valueReference.setReference(REF_BEARER);
+        valueReference.setStringValue(BEARER_URN);
+        // TODO check whether Authorization server should be provided like this
+        net.opengis.ows.x11.MetadataType metadata = constraint.addNewMetadata();
+        metadata.setRole("AuthorizationServer");
+        metadata.setHref(conf.getAuthorizationServer());
+
+        // add new scopes constraint
+        constraint = operation.addNewConstraint();
+        constraint.setName(SCOPES_URN);
+        for (String scope : scopes) {
+            constraint.addNewAllowedValues().addNewValue().setStringValue(scope);
+        }
+
     }
 
     /**
@@ -176,20 +205,20 @@ public class CapabilitiesInjector {
     private void createBearerConstraint(Operation operation,
             List<String> scopes) {
 
-        //add new bearer token constraint
+        // add new bearer token constraint
         DomainType constraint = operation.addNewConstraint();
         ValuesReference valueReference = constraint.addNewValuesReference();
         valueReference.setReference(REF_BEARER);
         valueReference.setStringValue(BEARER_URN);
-        //TODO check whether Authorization server should be provided like this
+        // TODO check whether Authorization server should be provided like this
         MetadataType metadata = constraint.addNewMetadata();
         metadata.setRole("AuthorizationServer");
         metadata.setHref(conf.getAuthorizationServer());
 
-        //add new scopes constraint
+        // add new scopes constraint
         constraint = operation.addNewConstraint();
         constraint.setName(SCOPES_URN);
-        for (String scope:scopes){
+        for (String scope : scopes) {
             constraint.addNewAllowedValues().addNewValue().setStringValue(scope);
         }
     }

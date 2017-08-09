@@ -1,7 +1,7 @@
 {
-  "serviceType":"wps",
-  "backendServiceURL":"http://ows.dev.52north.org:8080/javaps/service",
-  "securityProxyURL":"http://localhost:8080/SecurityProxy/service/wps",
+  "serviceType":"wfs",
+  "backendServiceURL":"http://tb12.dev.52north.org:80/geoserver/tb13/wfs",
+  "securityProxyURL":"http://localhost:8080/SecurityProxy/service/wfs",
   "OAuth":{
   	"OAuthEnabled":true,
   	"authorizationServer":"http://my.server.com/authorize",
@@ -13,8 +13,8 @@
   	"authorizeExecuteProcessIdentifier":true,
   	"authorizeDescribeFeatureType":true,
   	"authorizeDescribeFeatureTypeName":true,
-  	"authorizeGetFeature":true,
-  	"authorizeGetFeatureTypeName":true,
+  	"authorizeGetFeature":false,
+  	"authorizeGetFeatureTypeName":false,
   	"typeNames":[
   	"tb13:tnm-manhattan-streets"]
   },

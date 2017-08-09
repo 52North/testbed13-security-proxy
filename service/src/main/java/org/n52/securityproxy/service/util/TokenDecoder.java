@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 public class TokenDecoder {
@@ -62,15 +63,18 @@ public class TokenDecoder {
     }
 
     public DecodedJWT decodeToken(String token,
-            String issuer) throws GeneralSecurityException {
+            String issuer) throws GeneralSecurityException, TokenExpiredException {
 
+        DecodedJWT decodedToken = null;
         RSAPublicKey publicKey = newRsaPublicKey();
 
         Algorithm algorithm = Algorithm.RSA256(publicKey, null);
 
         JWTVerifier verifier = JWT.require(algorithm).withIssuer(issuer).build();
 
-        return verifier.verify(token);
+        decodedToken = verifier.verify(token);
+
+        return decodedToken;
     }
 
     /**

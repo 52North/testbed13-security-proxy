@@ -70,14 +70,46 @@ public class Service implements ServletContextAware, ServletConfigAware {
 
         LOGGER.info("Incoming request for service with id: " + serviceId);
 
-        //check, whether request is GetCapabilities
+        // check, whether request is GetCapabilities
         String requestParam = req.getParameterValues("request")[0];
+        String queryString = req.getQueryString();
+        String serviceParam = req.getParameterValues("service")[0];
+
+        // check whether service in URL is correct
+        if (!serviceId.equalsIgnoreCase(config.getServiceType().toString())) {
+            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            res.getWriter().write("Supported endpoint is not available! Endpoint is:" + config.getBackendServiceURL());
+            return;
+        }
+
+        // check service request param
+        if (!serviceParam.equalsIgnoreCase(config.getServiceType().toString())) {
+            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            res.getWriter().write(
+                    "Wrong service type! Service is " + config.getServiceType().toString() + ". Requested service is: "
+                            + serviceParam);
+            return;
+        }
+
         if (requestParam.equals("GetCapabilities")) {
-            ResponseEntity<String> response = HttpUtil.httpGet(config.getBackendServiceURL() + "?"+req.getQueryString());
+
+            String version = req.getParameterValues("version")[0];
+            if (version == null) {
+                queryString = queryString.concat("&version=\"2.0.0\"");
+            }
+            if (!version.equals("2.0.0")) {
+                res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                res.getWriter().write("Service only supports version 2.0.0. Requested version was " + version + ".");
+                return;
+            }
+
+            ResponseEntity<String> response =
+                    HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                            config.getServiceType());
             handleCapabilitiesResponse(response, res);
         }
 
-        //other requests than GetCapabilities
+        // other requests than GetCapabilities
         else {
 
             // if certificate enabled, extract certificate and pass request to
@@ -91,7 +123,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
             if (config.isOauthEnabled()) {
 
                 OAuthHandler handler = new OAuthHandler();
-               handler.get(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"));
+                handler.get(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"));
             }
 
         }
@@ -108,8 +140,9 @@ public class Service implements ServletContextAware, ServletConfigAware {
 
         XmlObject postRequest = XmlObject.Factory.parse(req.getInputStream());
 
-        //GetCapabilities Request
-        if (postRequest instanceof GetCapabilitiesDocument || postRequest instanceof net.opengis.wfs.x20.GetCapabilitiesDocument) {
+        // GetCapabilities Request
+        if (postRequest instanceof GetCapabilitiesDocument
+                || postRequest instanceof net.opengis.wfs.x20.GetCapabilitiesDocument) {
             ResponseEntity<String> response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
             handleCapabilitiesResponse(response, res);
         }
@@ -127,7 +160,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
             if (config.isOauthEnabled()) {
 
                 OAuthHandler handler = new OAuthHandler();
-                handler.post(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"),postRequest);
+                handler.post(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"), postRequest);
             }
 
         }
@@ -143,45 +176,51 @@ public class Service implements ServletContextAware, ServletConfigAware {
         this.ctx = arg0;
     }
 
-
     /**
-     * helper for handling Capabilities response documents, injecting security infos and forwarding them to clients
+     * helper for handling Capabilities response documents, injecting security
+     * infos and forwarding them to clients
      *
      * @param capsResp
-     *         response from Backendservice
+     *            response from Backendservice
      * @param res
-     *          HttpServletResponse used to send response to client
+     *            HttpServletResponse used to send response to client
      * @throws IOException
      *
      * @throws XmlException
      */
-    private void handleCapabilitiesResponse(ResponseEntity<String> capsResp, HttpServletResponse res) throws IOException, XmlException{
+    private void handleCapabilitiesResponse(ResponseEntity<String> capsResp,
+            HttpServletResponse res) throws IOException, XmlException {
         PrintWriter writer = res.getWriter();
         HttpUtil.setHeaders(res, capsResp);
         CapabilitiesInjector inj = new CapabilitiesInjector();
         XmlObject caps = XmlObject.Factory.parse(capsResp.getBody());
-        XmlOptions xmlOpts= XMLBeansHelper.getWPSXmlOptions(); //TODO apparently no influence of xmlOpts so far...
+        XmlOptions xmlOpts = XMLBeansHelper.getWPSXmlOptions(); // TODO
+                                                                // apparently no
+                                                                // influence of
+                                                                // xmlOpts so
+                                                                // far...
 
-        //WPS Capabilities
+        // WPS Capabilities
         if (caps instanceof CapabilitiesDocument) {
-                inj.injectWPSCaps((CapabilitiesDocument) caps);
-                String capsString = replaceCapsURLs(caps.xmlText(xmlOpts));
-                writer.write(capsString);
-            }
+            inj.injectWPSCaps((CapabilitiesDocument) caps);
+            String capsString = replaceCapsURLs(caps.xmlText(xmlOpts));
+            writer.write(capsString);
+        }
 
-        //WFS Capabilities
+        // WFS Capabilities
         else if (caps instanceof WFSCapabilitiesDocument) {
-                inj.injectWFSCaps((WFSCapabilitiesDocument)caps);
-                String capsString = replaceCapsURLs(caps.xmlText(xmlOpts));
-                writer.write(capsString);
-            }
-        //either exception or Capabilities of service which is not supported; response is simply forwarded
+            inj.injectWFSCaps((WFSCapabilitiesDocument) caps);
+            String capsString = replaceCapsURLs(caps.xmlText(xmlOpts));
+            writer.write(capsString);
+        }
+        // either exception or Capabilities of service which is not supported;
+        // response is simply forwarded
         else {
             writer.write(capsResp.getBody());
         }
     }
 
-    private String replaceCapsURLs(String capsString){
+    private String replaceCapsURLs(String capsString) {
         String backendURL = config.getBackendServiceURL();
         capsString = capsString.replaceAll(backendURL, config.getSecurityProxyURL());
         return capsString;

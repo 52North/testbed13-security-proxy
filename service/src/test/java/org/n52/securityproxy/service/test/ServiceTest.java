@@ -22,7 +22,10 @@ import java.io.IOException;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.junit.Test;
+import org.n52.securityproxy.service.util.Constants;
+import org.n52.securityproxy.service.util.Constants.ServiceType;
 import org.n52.securityproxy.service.util.HttpUtil;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 public class ServiceTest {
@@ -38,7 +41,7 @@ public class ServiceTest {
     }
 
     public void testGetCapabilities(){
-        ResponseEntity<String> capsResp = HttpUtil.httpGet(WPS_PROXY_BASE_URL+WPS_QS_CAPS);
+        ResponseEntity<String> capsResp = HttpUtil.httpGet(WPS_PROXY_BASE_URL+WPS_QS_CAPS,ServiceType.wps);
         System.out.println(capsResp.getBody());
     }
 

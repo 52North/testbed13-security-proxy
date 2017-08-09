@@ -23,18 +23,17 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-import org.n52.geoprocessing.oauth2.TokenDecoder;
-import org.n52.securityproxy.service.handler.OAuthHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
 /**
- * provides utility methods for OAuth Token parsing and verification; wraps auth0 OAuth Java libs.
+ * provides utility methods for OAuth Token parsing and verification; wraps
+ * auth0 OAuth Java libs.
  *
  * @author staschc
  *
@@ -60,7 +59,7 @@ public class OAuthUtil {
      */
     public static List<String> getScopesFromToken(InputStream publicKey,
             String token,
-            String issuer) throws GeneralSecurityException, IOException {
+            String issuer) throws GeneralSecurityException, IOException, TokenExpiredException {
         List<String> scopes = new ArrayList<>();
         DecodedJWT jwt = new TokenDecoder(publicKey).decodeToken(token, issuer);
 
@@ -77,7 +76,7 @@ public class OAuthUtil {
         String scopeText = scopeNode.textValue();
         String[] scopeArray = scopeText.split(" ");
 
-        for (String scope:scopeArray){
+        for (String scope : scopeArray) {
             scopes.add(scope);
         }
 

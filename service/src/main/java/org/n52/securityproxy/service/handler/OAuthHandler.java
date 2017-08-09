@@ -19,6 +19,7 @@ package org.n52.securityproxy.service.handler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -44,6 +45,8 @@ import org.n52.securityproxy.service.util.SecurityProxyConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+
+import com.auth0.jwt.exceptions.TokenExpiredException;
 
 /**
  * handler for maning request to OAuth secured OGC Web Services. Currently
@@ -104,13 +107,17 @@ public class OAuthHandler {
                         return;
                     }
                     if (checkExecuteScopes(scopes, processID, res)) {
-                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                        response =
+                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                        ServiceType.wps);
                     }
                 }
 
                 // no authorization
                 else {
-                    response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                    response =
+                            HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                    ServiceType.wps);
                 }
             }
 
@@ -125,13 +132,17 @@ public class OAuthHandler {
                         return;
                     }
                     if (checkDescribeProcessScopes(scopes, processID, res)) {
-                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                        response =
+                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                        ServiceType.wps);
                     }
                 }
 
                 // no authorization
                 else {
-                    response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                    response =
+                            HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                    ServiceType.wps);
                 }
             }
         }
@@ -149,10 +160,15 @@ public class OAuthHandler {
                         return;
                     }
                     if (checkGetFeatureScopes(scopes, typeNames, res)) {
-                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                        response =
+                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                        ServiceType.wfs);
+
                     }
                 } else {
-                    response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                    response =
+                            HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                    ServiceType.wfs);
                 }
             }
 
@@ -163,10 +179,14 @@ public class OAuthHandler {
                         return;
                     }
                     if (checkDescribeFeatureTypeScopes(scopes, typeNames, res)) {
-                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                        response =
+                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                        ServiceType.wfs);
                     }
                 } else {
-                    response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString());
+                    response =
+                            HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                    ServiceType.wfs);
                 }
             }
 
@@ -328,7 +348,6 @@ public class OAuthHandler {
         }
         return;
 
-
     }
 
     private void handleOperationResponse(ResponseEntity<String> resp,
@@ -436,7 +455,7 @@ public class OAuthHandler {
                     return false;
                 }
 
-                if (!scopes.contains("GetFeatureType/TypeName=" + typeName)) {
+                if (!scopes.contains("GetFeature/TypeName=" + typeName)) {
                     res.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     res.getWriter().write("No valid scope for GetFeature operation with type name: " + typeName + ".");
                     return false;
@@ -448,18 +467,24 @@ public class OAuthHandler {
 
     private List<String> checkToken(String token,
             HttpServletResponse res,
-            InputStream publicKey) {
+            InputStream publicKey) throws IOException {
         if (token == null) {
             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            res.getWriter().write("OAuth access token is needed to run request service operation.");
             return null;
         } else {
             List<String> scopes;
             try {
                 scopes = OAuthUtil.getScopesFromToken(publicKey, token, "https://bpross-52n.eu.auth0.com/");
+            } catch (TokenExpiredException e) {
+                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                res.getWriter().write(e.getMessage());
+                return null;
             } catch (GeneralSecurityException | IOException e) {
                 LOGGER.error("Error while validating and parsing token", e);
                 throw new RuntimeException("Error while validating and parsing token", e);
             }
+
             return scopes;
         }
     }

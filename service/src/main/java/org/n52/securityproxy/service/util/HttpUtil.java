@@ -23,6 +23,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.xmlbeans.XmlObject;
+import org.n52.securityproxy.service.util.Constants.ServiceType;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -50,7 +51,7 @@ public class HttpUtil {
      */
     public static ResponseEntity<String> httpPost(String serviceURL,
             XmlObject request) {
-        String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+request.xmlText();
+        String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + request.xmlText();
 
         RestTemplate restTemplate = new RestTemplate();
         List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();
@@ -59,7 +60,7 @@ public class HttpUtil {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
-        HttpEntity<String> httpReq = new HttpEntity<String>(xmlString,headers);
+        HttpEntity<String> httpReq = new HttpEntity<String>(xmlString, headers);
 
         return restTemplate.postForEntity(serviceURL, httpReq, String.class);
     }
@@ -69,21 +70,29 @@ public class HttpUtil {
      *
      * @param requestURL
      *            request URL that should be invoked using HTTP GET
+     * @param serviceType
+     *            type of OWS
      * @return response
      */
-    public static ResponseEntity<String> httpGet(String requestURL) {
+    public static ResponseEntity<String> httpGet(String requestURL,
+            ServiceType serviceType) {
+
         RestTemplate restTemplate = new RestTemplate();
+        if (serviceType == ServiceType.wfs && requestURL.contains("GetFeature")) {
+            restTemplate = new WFSRestTemplate();
+        }
         ResponseEntity<String> response = restTemplate.getForEntity(requestURL, String.class);
         return response;
     }
 
     /**
-     * helper for setting headers from Spring response entity to HttpServletResponse
+     * helper for setting headers from Spring response entity to
+     * HttpServletResponse
      *
      * @param res
-     *          target response
+     *            target response
      * @param resEntity
-     *          Spring response entity
+     *            Spring response entity
      */
     public static void setHeaders(HttpServletResponse res,
             ResponseEntity<?> resEntity) {
@@ -91,10 +100,11 @@ public class HttpUtil {
         Iterator<String> keyIterator = headers.keySet().iterator();
         while (keyIterator.hasNext()) {
             String key = keyIterator.next();
-            //filter out Transfer-Encoding:chunked
-            if (!key.equals("Transfer-Encoding")){
+            // filter out Transfer-Encoding:chunked
+            if (!key.equals("Transfer-Encoding")) {
                 res.setHeader(key, headers.get(key).get(0));
             }
         }
     }
+
 }
