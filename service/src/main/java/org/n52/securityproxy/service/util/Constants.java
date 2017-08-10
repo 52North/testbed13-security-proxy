@@ -34,7 +34,7 @@ public class Constants {
      * RequestTypes
      */
     public enum RequestType {
-        GetCapabilities, DescribeProcess, Execute, GetStatus, DescribeFeatureType, GetFeature, Transaction
+        GetCapabilities, DescribeProcess, Execute, GetStatus, DescribeFeatureType, GetFeature, Transaction, InsertProcess, GetResult
     }
 
 }
