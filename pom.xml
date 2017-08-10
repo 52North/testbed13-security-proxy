@@ -67,6 +67,14 @@
 			<organizationUrl>${project.organization.url}</organizationUrl>
 			<timezone>GMT+1</timezone>
 		</developer>
+		<developer>
+			<id>staschc</id>
+			<name>Christoph Stasch</name>
+			<email>c.stasch@52north.org</email>
+			<organization>${project.organization.name}</organization>
+			<organizationUrl>${project.organization.url}</organizationUrl>
+			<timezone>GMT+1</timezone>
+		</developer>
 	</developers>
 
 	<scm>
