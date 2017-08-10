@@ -246,8 +246,6 @@ public class Service implements ServletContextAware, ServletConfigAware {
         }
     }
 
-    }
-
     private String getParameterValue(HttpServletRequest req, String key){
 
         String value = null;
@@ -268,5 +266,6 @@ public class Service implements ServletContextAware, ServletConfigAware {
         }
 
         return value;
+    }
 
 }
