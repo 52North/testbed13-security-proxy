@@ -18,6 +18,8 @@ package org.n52.securityproxy.service;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -71,9 +73,9 @@ public class Service implements ServletContextAware, ServletConfigAware {
         LOGGER.info("Incoming request for service with id: " + serviceId);
 
         // check, whether request is GetCapabilities
-        String requestParam = req.getParameterValues("request")[0];
+        String requestParam = getParameterValue(req, "request");
         String queryString = req.getQueryString();
-        String serviceParam = req.getParameterValues("service")[0];
+        String serviceParam = getParameterValue(req, "service");
 
         // check whether service in URL is correct
         if (!serviceId.equalsIgnoreCase(config.getServiceType().toString())) {
@@ -93,19 +95,32 @@ public class Service implements ServletContextAware, ServletConfigAware {
 
         if (requestParam.equals("GetCapabilities")) {
 
-            String version = req.getParameterValues("version")[0];
-            if (version == null) {
-                queryString = queryString.concat("&version=\"2.0.0\"");
-            }
-            if (!version.equals("2.0.0")) {
-                // TODO maybe change to exception response
-                res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                res.getWriter().write("Service only supports version 2.0.0. Requested version was " + version + ".");
-                return;
-            }
+            if (serviceParam.equalsIgnoreCase("wfs")) {
 
+                String version = getParameterValue(req, "version");
+                if (version == null) {
+                    queryString = queryString.concat("&version=2.0.0");
+                }
+                if (version != null && !version.equals("2.0.0")) {
+                // TODO maybe change to exception response
+                    res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    res.getWriter().write("Service only supports version 2.0.0. Requested version was " + version + ".");
+                    return;
+                }
+            }else if (serviceParam.equalsIgnoreCase("wps")) {
+
+                String version = getParameterValue(req, "acceptversions");
+                if (version == null) {
+                    queryString = queryString.concat("&acceptversions=2.0.0");
+                }
+                if (version != null && !version.equals("2.0.0")) {
+                    res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    res.getWriter().write("Service only supports version 2.0.0. Requested version was " + version + ".");
+                    return;
+                }
+            }
             ResponseEntity<String> response =
-                    HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                    HttpUtil.httpGet(config.getBackendServiceURL() + "?" + queryString,
                             config.getServiceType());
             handleCapabilitiesResponse(response, res);
         }
@@ -230,5 +245,28 @@ public class Service implements ServletContextAware, ServletConfigAware {
             writer.write(capsResp.getBody());
         }
     }
+
+    }
+
+    private String getParameterValue(HttpServletRequest req, String key){
+
+        String value = null;
+
+        Map<String, String[]> parameterMap = req.getParameterMap();
+
+        Iterator<String> parameterKeyIterator = parameterMap.keySet().iterator();
+
+        while (parameterKeyIterator.hasNext()) {
+            String parameterKey = (String) parameterKeyIterator.next();
+
+            if(parameterKey.toLowerCase().equals(key.toLowerCase())){
+                String[] possibleValueArray = parameterMap.get(parameterKey);
+                if(possibleValueArray != null && possibleValueArray.length > 0){
+                    return possibleValueArray[0];
+                }
+            }
+        }
+
+        return value;
 
 }
