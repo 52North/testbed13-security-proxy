@@ -27,8 +27,8 @@ import net.opengis.ows.x20.ValuesReferenceDocument.ValuesReference;
 import net.opengis.wfs.x20.WFSCapabilitiesDocument;
 import net.opengis.wps.x20.CapabilitiesDocument;
 
-import org.n52.securityproxy.service.util.SecurityProxyConfiguration;
 import org.n52.securityproxy.service.util.Constants.RequestType;
+import org.n52.securityproxy.service.util.SecurityProxyConfiguration;
 
 /**
  *
@@ -76,7 +76,15 @@ public class CapabilitiesInjector {
 
         for (Operation operation : operationArray) {
             String name = operation.getName();
-            if (name.equals(RequestType.DescribeProcess.toString())) {
+            if (name.equals(RequestType.GetCapabilities.toString())) {
+                DomainType[] parameters = operation.getParameterArray();
+                for (DomainType parameter : parameters) {
+                    if (parameter.getName().equalsIgnoreCase("AcceptVersions")) {
+                        parameter.unsetAllowedValues();
+                        parameter.addNewAllowedValues().addNewValue().setStringValue("2.0.0");
+                    }
+                }
+            } else if (name.equals(RequestType.DescribeProcess.toString())) {
                 List<String> scopes = new ArrayList<String>();
                 if (conf.isAuthorizeDescribeProcess()) {
                     scopes.add("DescribeProcess");
@@ -124,13 +132,23 @@ public class CapabilitiesInjector {
 
         net.opengis.ows.x11.OperationDocument.Operation[] operationArray =
                 caps.getWFSCapabilities().getOperationsMetadata().getOperationArray();
-        List<String> scopes = new ArrayList<String>();
+        List<String> scopes = null;
         for (OperationDocument.Operation operation : operationArray) {
             String name = operation.getName();
 
+            if (name.equals(RequestType.GetCapabilities.toString())) {
+                net.opengis.ows.x11.DomainType[] parameters = operation.getParameterArray();
+                for (net.opengis.ows.x11.DomainType parameter : parameters) {
+                    if (parameter.getName().equalsIgnoreCase("AcceptVersions")) {
+                        parameter.unsetAllowedValues();
+                        parameter.addNewAllowedValues().addNewValue().setStringValue("2.0.0");
+                    }
+                }
+            }
             if (name.equals(RequestType.DescribeFeatureType.toString())) {
 
                 if (conf.isAuthorizeDescribeFeatureType()) {
+                    scopes = new ArrayList<String>();
                     scopes.add("DescribeFeatureType");
                     if (conf.isAuthorizeDescribeFeatureTypeName()) {
                         List<String> typeNames = conf.getTypeNames();
@@ -148,10 +166,10 @@ public class CapabilitiesInjector {
             }
 
             else if (name.equals(RequestType.GetFeature.toString())) {
-
+                scopes = new ArrayList<String>();
                 if (conf.isAuthorizeGetFeature()) {
                     scopes.add("GetFeature");
-                    if (conf.isAuthorizeDescribeFeatureTypeName()) {
+                    if (conf.isAuthorizeGetFeatureTypeName()) {
                         List<String> typeNames = conf.getTypeNames();
                         for (String typeName : typeNames) {
                             scopes.add("GetFeature/TypeName=" + typeName);

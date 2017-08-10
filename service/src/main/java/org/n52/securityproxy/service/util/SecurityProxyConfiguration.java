@@ -58,6 +58,8 @@ public class SecurityProxyConfiguration {
 
     private boolean authorizeExecuteProcessID;
 
+    private boolean authorizeInsertProcess;
+
     private boolean authorizeGetFeature;
 
     private boolean authorizeDescribeFeatureType;
@@ -72,7 +74,7 @@ public class SecurityProxyConfiguration {
 
     private boolean authorizeDescribeFeatureTypeName;
 
-
+    private boolean authorizeTransaction;
 
     private SecurityProxyConfiguration(InputStream configJSON) {
         parseConfig(configJSON);
@@ -158,14 +160,18 @@ public class SecurityProxyConfiguration {
             authorizeExecute = root.findPath("authorizeExecute").asBoolean();
             authorizeExecuteProcessID = root.findPath("authorizeExecuteProcessIdentifier").asBoolean();
 
+            authorizeInsertProcess = root.findPath("authorizeInsertProcess").asBoolean();
+
             authorizeGetFeature = root.findPath("authorizeGetFeature").asBoolean();
             authorizeGetFeatureTypeName = root.findPath("authorizeGetFeatureTypeName").asBoolean();
-
 
             authorizeDescribeFeatureType = root.findPath("authorizeDescribeFeatureType").asBoolean();
             authorizeDescribeFeatureTypeName = root.findPath("authorizeDescribeFeatureTypeName").asBoolean();
 
+            authorizeTransaction = root.findPath("authorizeTransaction").asBoolean();
+
             processIdentifiers = parseStringArray(root.findPath("processIdentifiers").elements());
+
             typeNames = parseStringArray(root.findPath("typeNames").elements());
         } catch (Exception e) {
             LOGGER.error("Error while reading SecurityProxyConfiguration!");
@@ -173,10 +179,9 @@ public class SecurityProxyConfiguration {
         }
     }
 
-
     private List<String> parseStringArray(Iterator<JsonNode> elements) {
         List<String> strings = new ArrayList<String>();
-        while (elements.hasNext()){
+        while (elements.hasNext()) {
             strings.add(elements.next().asText());
         }
         return strings;
@@ -201,5 +206,21 @@ public class SecurityProxyConfiguration {
 
     public boolean isAuthorizeDescribeFeatureTypeName() {
         return authorizeDescribeFeatureTypeName;
+    }
+
+    public boolean isAuthorizeTransaction() {
+        return authorizeTransaction;
+    }
+
+    public String replaceServiceURLs(String responseString) {
+        String backendURL = this.getBackendServiceURL();
+        responseString = responseString.replaceAll(backendURL, this.getSecurityProxyURL());
+        // quick workaround for chaging version in URL to feature schema
+        responseString = responseString.replaceAll("&amp;version=2.0.2&amp;", "&amp;version=2.0.0&amp;");
+        return responseString;
+    }
+
+    public boolean isAuthorizeInsertProcess() {
+        return authorizeInsertProcess;
     }
 }

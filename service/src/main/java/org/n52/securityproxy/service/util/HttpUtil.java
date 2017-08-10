@@ -53,11 +53,7 @@ public class HttpUtil {
             XmlObject request) {
         String xmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + request.xmlText();
 
-        RestTemplate restTemplate = new RestTemplate();
-        List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();
-        messageConverters.add(new StringHttpMessageConverter());
-        restTemplate.setMessageConverters(messageConverters);
-
+        RestTemplate restTemplate = new XMLRestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
         HttpEntity<String> httpReq = new HttpEntity<String>(xmlString, headers);
@@ -77,10 +73,7 @@ public class HttpUtil {
     public static ResponseEntity<String> httpGet(String requestURL,
             ServiceType serviceType) {
 
-        RestTemplate restTemplate = new RestTemplate();
-        if (serviceType == ServiceType.wfs && requestURL.contains("GetFeature")) {
-            restTemplate = new WFSRestTemplate();
-        }
+        RestTemplate restTemplate = new XMLRestTemplate();
         ResponseEntity<String> response = restTemplate.getForEntity(requestURL, String.class);
         return response;
     }

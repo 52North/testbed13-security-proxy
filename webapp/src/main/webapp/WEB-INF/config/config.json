@@ -7,14 +7,16 @@
   	"authorizationServer":"http://my.server.com/authorize",
   	"authorizeDescribeProcess":false,
   	"authorizeDescribeProcessIdentifier":false,
+  	 "authorizeExecute":true,
+  	"authorizeExecuteProcessIdentifier":true,
+  	"authorizeInsertProcess":true,
   	"processIdentifiers":[
   	"org.n52.geoprocessing.geotools.algorithm.CoordinateTransformationAlgorithm"],
-  	"authorizeExecute":true,
-  	"authorizeExecuteProcessIdentifier":true,
   	"authorizeDescribeFeatureType":true,
   	"authorizeDescribeFeatureTypeName":true,
-  	"authorizeGetFeature":false,
+  	"authorizeGetFeature":true,
   	"authorizeGetFeatureTypeName":false,
+  	"authorizeTransaction":false,
   	"typeNames":[
   	"tb13:tnm-manhattan-streets"]
   },

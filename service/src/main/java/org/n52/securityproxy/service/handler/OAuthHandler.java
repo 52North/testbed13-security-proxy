@@ -33,6 +33,7 @@ import net.opengis.ows.x20.CodeType;
 import net.opengis.wfs.x20.DescribeFeatureTypeDocument;
 import net.opengis.wfs.x20.GetFeatureDocument;
 import net.opengis.wfs.x20.QueryType;
+import net.opengis.wfs.x20.TransactionDocument;
 import net.opengis.wps.x20.DescribeProcessDocument;
 import net.opengis.wps.x20.ExecuteDocument;
 
@@ -172,7 +173,8 @@ public class OAuthHandler {
                 }
             }
 
-            if (requestParam.equals(RequestType.DescribeFeatureType.toString())) {
+            // DescribeFeatureType operation
+            else if (requestParam.equals(RequestType.DescribeFeatureType.toString())) {
                 if (config.isAuthorizeDescribeFeatureType()) {
                     scopes = checkToken(token, res, publicKey);
                     if (scopes == null) {
@@ -184,6 +186,28 @@ public class OAuthHandler {
                                         ServiceType.wfs);
                     }
                 } else {
+                    response =
+                            HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                    ServiceType.wfs);
+                }
+            }
+
+            // DescribeFeatureType operation
+            else if (requestParam.equals(RequestType.Transaction.toString())) {
+                if (config.isAuthorizeDescribeFeatureType()) {
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+                    if (checkTransactionScopes(scopes, typeNames, res)) {
+                        response =
+                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                        ServiceType.wfs);
+                    }
+                }
+
+                // any other operation
+                else {
                     response =
                             HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
                                     ServiceType.wfs);
@@ -341,6 +365,40 @@ public class OAuthHandler {
                 }
             }
 
+            // Transaction operation
+            else if (postRequest instanceof TransactionDocument) {
+                if (config.isAuthorizeTransaction()) {
+                    List<String> typeNames = new ArrayList<String>();
+                    AbstractQueryExpressionType[] queries =
+                            ((GetFeatureDocument) postRequest).getGetFeature().getAbstractQueryExpressionArray();
+                    for (AbstractQueryExpressionType query : queries) {
+                        QueryType expr = (QueryType) query;
+                        Iterator featureTypes = expr.getTypeNames().iterator();
+                        while (featureTypes.hasNext()) {
+                            String typeName = (String) featureTypes.next();
+                            typeNames.add(typeName);
+                        }
+
+                    }
+
+                    // check token
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+
+                    // check scopes and execute, if authorized
+                    if (checkTransactionScopes(scopes, typeNames, res)) {
+                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                    }
+                }
+            }
+
+            //any other operation
+            else {
+                response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+            }
+
         }
 
         if (response != null) {
@@ -353,7 +411,7 @@ public class OAuthHandler {
     private void handleOperationResponse(ResponseEntity<String> resp,
             HttpServletResponse res) throws IOException {
         HttpUtil.setHeaders(res, resp);
-        String response = resp.getBody();
+        String response = config.replaceServiceURLs(resp.getBody());
         Writer writer = res.getWriter();
         writer.write(response);
 
@@ -462,6 +520,18 @@ public class OAuthHandler {
                 }
             }
         }
+        return true;
+    }
+
+    private boolean checkTransactionScopes(List<String> scopes,
+            List<String> typeNames,
+            HttpServletResponse res) throws IOException {
+        if (!scopes.contains("Transaction")) {
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            res.getWriter().write("No valid scope for Transaction operation.");
+            return false;
+        }
+
         return true;
     }
 

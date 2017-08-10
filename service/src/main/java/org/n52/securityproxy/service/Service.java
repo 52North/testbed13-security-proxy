@@ -78,7 +78,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
         // check whether service in URL is correct
         if (!serviceId.equalsIgnoreCase(config.getServiceType().toString())) {
             res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            res.getWriter().write("Supported endpoint is not available! Endpoint is:" + config.getBackendServiceURL());
+            res.getWriter().write("Endpoint is not available! Supported endpoint is:" + config.getBackendServiceURL());
             return;
         }
 
@@ -98,6 +98,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
                 queryString = queryString.concat("&version=\"2.0.0\"");
             }
             if (!version.equals("2.0.0")) {
+                // TODO maybe change to exception response
                 res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 res.getWriter().write("Service only supports version 2.0.0. Requested version was " + version + ".");
                 return;
@@ -111,6 +112,16 @@ public class Service implements ServletContextAware, ServletConfigAware {
 
         // other requests than GetCapabilities
         else {
+
+            String version = req.getParameterValues("version")[0];
+            if (version == null) {
+                queryString = queryString.concat("&version=\"2.0.0\"");
+            }
+            if (!version.equals("2.0.0")) {
+                res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                res.getWriter().write("Service only supports version 2.0.0. Requested version was " + version + ".");
+                return;
+            }
 
             // if certificate enabled, extract certificate and pass request to
             // X509handler
@@ -203,14 +214,14 @@ public class Service implements ServletContextAware, ServletConfigAware {
         // WPS Capabilities
         if (caps instanceof CapabilitiesDocument) {
             inj.injectWPSCaps((CapabilitiesDocument) caps);
-            String capsString = replaceCapsURLs(caps.xmlText(xmlOpts));
+            String capsString = config.replaceServiceURLs(caps.xmlText(xmlOpts));
             writer.write(capsString);
         }
 
         // WFS Capabilities
         else if (caps instanceof WFSCapabilitiesDocument) {
             inj.injectWFSCaps((WFSCapabilitiesDocument) caps);
-            String capsString = replaceCapsURLs(caps.xmlText(xmlOpts));
+            String capsString = config.replaceServiceURLs(caps.xmlText(xmlOpts));
             writer.write(capsString);
         }
         // either exception or Capabilities of service which is not supported;
@@ -218,12 +229,6 @@ public class Service implements ServletContextAware, ServletConfigAware {
         else {
             writer.write(capsResp.getBody());
         }
-    }
-
-    private String replaceCapsURLs(String capsString) {
-        String backendURL = config.getBackendServiceURL();
-        capsString = capsString.replaceAll(backendURL, config.getSecurityProxyURL());
-        return capsString;
     }
 
 }
