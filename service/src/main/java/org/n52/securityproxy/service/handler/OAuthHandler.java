@@ -36,6 +36,7 @@ import net.opengis.wfs.x20.QueryType;
 import net.opengis.wfs.x20.TransactionDocument;
 import net.opengis.wps.x20.DescribeProcessDocument;
 import net.opengis.wps.x20.ExecuteDocument;
+import net.opengis.wps.x20.InsertProcessDocument;
 
 import org.apache.xmlbeans.XmlObject;
 import org.n52.securityproxy.service.util.Constants.RequestType;
@@ -295,6 +296,25 @@ public class OAuthHandler {
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                 }
             }
+
+            // InsertProcess
+            else if (postRequest instanceof InsertProcessDocument) {
+
+                if (config.isAuthorizeInsertProcess()) {
+
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+
+                    // check scopes and execute, if authorized
+                    if (checkInsertProcessScope(scopes, res)) {
+                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                    }
+                } else {
+                    response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                }
+            }
         }
 
         // WFS
@@ -445,6 +465,15 @@ public class OAuthHandler {
         return true;
     }
 
+    private boolean checkInsertProcessScope(List<String> scopes, HttpServletResponse res) throws IOException {
+        if (!scopes.contains("Execute")) {
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            res.getWriter().write("No valid scope for InsertProcess operation.");
+            return false;
+        }
+        return true;
+    }
+
     private boolean checkDescribeProcessScopes(List<String> scopes,
             String processID,
             HttpServletResponse res) throws IOException {
@@ -540,7 +569,7 @@ public class OAuthHandler {
             InputStream publicKey) throws IOException {
         if (token == null) {
             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.getWriter().write("OAuth access token is needed to run request service operation.");
+            res.getWriter().write("OAuth access token is needed to request this service operation.");
             return null;
         } else {
             List<String> scopes;

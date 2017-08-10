@@ -116,6 +116,16 @@ public class CapabilitiesInjector {
                 if (conf.isCertificateEnabled()) {
                     createCertificateConstraint(operation);
                 }
+            } else if (name.equals(RequestType.InsertProcess.toString())) {
+                List<String> scopes = new ArrayList<String>();
+                if (conf.isAuthorizeInsertProcess()) {
+                    scopes.add("InsertProcess");
+                    createBearerConstraint(operation, scopes);
+                }
+                // TODO reprogram with ACL!!
+                if (conf.isCertificateEnabled()) {
+                    createCertificateConstraint(operation);
+                }
             }
         }
     }
