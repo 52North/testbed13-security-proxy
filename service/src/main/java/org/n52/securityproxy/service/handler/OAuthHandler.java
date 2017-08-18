@@ -19,7 +19,6 @@ package org.n52.securityproxy.service.handler;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,16 +26,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import net.opengis.fes.x20.AbstractQueryExpressionType;
-import net.opengis.ows.x20.CodeType;
-import net.opengis.wfs.x20.DescribeFeatureTypeDocument;
-import net.opengis.wfs.x20.GetFeatureDocument;
-import net.opengis.wfs.x20.QueryType;
-import net.opengis.wfs.x20.TransactionDocument;
-import net.opengis.wps.x20.DescribeProcessDocument;
-import net.opengis.wps.x20.ExecuteDocument;
-import net.opengis.wps.x20.InsertProcessDocument;
 
 import org.apache.xmlbeans.XmlObject;
 import org.n52.securityproxy.service.util.Constants.RequestType;
@@ -49,6 +38,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 
 import com.auth0.jwt.exceptions.TokenExpiredException;
+
+import net.opengis.fes.x20.AbstractQueryExpressionType;
+import net.opengis.ows.x20.CodeType;
+import net.opengis.wfs.x20.DescribeFeatureTypeDocument;
+import net.opengis.wfs.x20.GetFeatureDocument;
+import net.opengis.wfs.x20.QueryType;
+import net.opengis.wfs.x20.TransactionDocument;
+import net.opengis.wps.x20.DataInputType;
+import net.opengis.wps.x20.DescribeProcessDocument;
+import net.opengis.wps.x20.ExecuteDocument;
+import net.opengis.wps.x20.GetStatusDocument;
+import net.opengis.wps.x20.InsertProcessDocument;
+import net.opengis.wps.x20.ReferenceType;
 
 /**
  * handler for maning request to OAuth secured OGC Web Services. Currently
@@ -146,6 +148,56 @@ public class OAuthHandler {
                             HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
                                     ServiceType.wps);
                 }
+            }
+
+            // GetStatus
+            else if (requestParam.equalsIgnoreCase(RequestType.GetStatus.toString())) {
+                // needs authorization TODO implement
+//                if (config.isAuthorizeGetStatus()) {
+//                    String processID = req.getParameter("identifier");
+//
+//                    scopes = checkToken(token, res, publicKey);
+//                    if (scopes == null) {
+//                        return;
+//                    }
+//                    if (checkDescribeProcessScopes(scopes, processID, res)) {
+//                        response =
+//                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+//                                        ServiceType.wps);
+//                    }
+//                }
+
+                // no authorization
+//                else {
+                    response =
+                            HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                    ServiceType.wps);
+//                }
+            }
+
+            // GetResult
+            else if (requestParam.equalsIgnoreCase(RequestType.GetResult.toString())) {
+                // needs authorization TODO implement
+//                if (config.isAuthorizeGetResult()) {
+//                    String processID = req.getParameter("identifier");
+//
+//                    scopes = checkToken(token, res, publicKey);
+//                    if (scopes == null) {
+//                        return;
+//                    }
+//                    if (checkDescribeProcessScopes(scopes, processID, res)) {
+//                        response =
+//                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+//                                        ServiceType.wps);
+//                    }
+//                }
+
+                // no authorization
+//                else {
+                    response =
+                            HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+                                    ServiceType.wps);
+//                }
             }
         }
 
@@ -262,9 +314,11 @@ public class OAuthHandler {
 
                     // check scopes and execute, if authorized
                     if (checkExecuteScopes(scopes, processID, res)) {
+                        handleInputs(postRequest);
                         response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                     }
                 } else {
+                    handleInputs(postRequest);
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                 }
             }
@@ -295,6 +349,62 @@ public class OAuthHandler {
                 } else {
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                 }
+            }
+
+            // GetStatus
+            else if (postRequest instanceof GetStatusDocument) {
+
+//                if (config.isAuthorizeGetStatus()) {//TODO implement
+//                    // TODO currently only single processIdentifier supported!
+//                    String processID = null;
+//                    CodeType[] processIDArray =
+//                            ((DescribeProcessDocument) postRequest).getDescribeProcess().getIdentifierArray();
+//                    scopes = checkToken(token, res, publicKey);
+//                    if (scopes == null) {
+//                        return;
+//                    }
+//                    if (processIDArray.length == 1) {
+//                        processID = processIDArray[0].getStringValue();
+//                    } else {
+//                        throw new RuntimeException(
+//                                "Currently only one identifier supported for DescribeProcess operation!");
+//                    }
+//
+//                    // check scopes and execute, if authorized
+//                    if (checkDescribeProcessScopes(scopes, processID, res)) {
+//                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+//                    }
+//                } else {
+                    response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+//                }
+            }
+
+            // GetResult
+            else if (postRequest instanceof GetStatusDocument) {
+
+//                if (config.isAuthorizeGetResult()) {//TODO implement
+//                    // TODO currently only single processIdentifier supported!
+//                    String processID = null;
+//                    CodeType[] processIDArray =
+//                            ((DescribeProcessDocument) postRequest).getDescribeProcess().getIdentifierArray();
+//                    scopes = checkToken(token, res, publicKey);
+//                    if (scopes == null) {
+//                        return;
+//                    }
+//                    if (processIDArray.length == 1) {
+//                        processID = processIDArray[0].getStringValue();
+//                    } else {
+//                        throw new RuntimeException(
+//                                "Currently only one identifier supported for DescribeProcess operation!");
+//                    }
+//
+//                    // check scopes and execute, if authorized
+//                    if (checkDescribeProcessScopes(scopes, processID, res)) {
+//                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+//                    }
+//                } else {
+                    response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+//                }
             }
 
             // InsertProcess
@@ -426,6 +536,34 @@ public class OAuthHandler {
         }
         return;
 
+    }
+
+    private XmlObject handleInputs(XmlObject postRequest) {
+
+        if(postRequest instanceof ExecuteDocument){
+
+            ExecuteDocument doc = (ExecuteDocument)postRequest;
+
+            DataInputType[] inputArray = doc.getExecute().getInputArray();
+
+            for (DataInputType dataInputType : inputArray) {
+
+                if(dataInputType.isSetReference()){
+                    dataInputType = handleInputReference(dataInputType);
+                }
+            }
+
+            return doc;
+        }
+
+        return postRequest;
+    }
+
+    private DataInputType handleInputReference(DataInputType dataInputType) {
+
+        ReferenceType referenceType = dataInputType.getReference();
+
+        return null;
     }
 
     private void handleOperationResponse(ResponseEntity<String> resp,
