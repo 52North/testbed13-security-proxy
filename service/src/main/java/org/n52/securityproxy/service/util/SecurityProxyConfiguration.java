@@ -214,7 +214,13 @@ public class SecurityProxyConfiguration {
 
     public String replaceServiceURLs(String responseString) {
         String backendURL = this.getBackendServiceURL();
-        responseString = responseString.replaceAll(backendURL, this.getSecurityProxyURL());
+
+        if(responseString.contains("RetrieveResultServlet")){
+            backendURL = this.getBackendServiceURL().replace("WebProcessingService", "RetrieveResultServlet");
+            responseString = responseString.replaceAll(backendURL + "\\?", this.getSecurityProxyURL() + "?request=GetOutput&amp;version=2.0.0&amp;service=WPS&amp;");
+        }else{
+            responseString = responseString.replaceAll(backendURL, this.getSecurityProxyURL());
+        }
         // quick workaround for chaging version in URL to feature schema
         responseString = responseString.replaceAll("&amp;version=2.0.2&amp;", "&amp;version=2.0.0&amp;");
         return responseString;

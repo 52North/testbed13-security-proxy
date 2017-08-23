@@ -73,9 +73,9 @@ public class Service implements ServletContextAware, ServletConfigAware {
         LOGGER.info("Incoming request for service with id: " + serviceId);
 
         // check, whether request is GetCapabilities
-        String requestParam = getParameterValue(req, "request");
+        String requestParam = HttpUtil.getParameterValue(req, "request");
         String queryString = req.getQueryString();
-        String serviceParam = getParameterValue(req, "service");
+        String serviceParam = HttpUtil.getParameterValue(req, "service");
 
         // check whether service in URL is correct
         if (!serviceId.equalsIgnoreCase(config.getServiceType().toString())) {
@@ -97,7 +97,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
 
             if (serviceParam.equalsIgnoreCase("wfs")) {
 
-                String version = getParameterValue(req, "version");
+                String version = HttpUtil.getParameterValue(req, "version");
                 if (version == null) {
                     queryString = queryString.concat("&version=2.0.0");
                 }
@@ -109,7 +109,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
                 }
             }else if (serviceParam.equalsIgnoreCase("wps")) {
 
-                String version = getParameterValue(req, "acceptversions");
+                String version = HttpUtil.getParameterValue(req, "acceptversions");
                 if (version == null) {
                     queryString = queryString.concat("&acceptversions=2.0.0");
                 }
@@ -128,7 +128,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
         // other requests than GetCapabilities
         else {
 
-            String version = getParameterValue(req, "version");
+            String version = HttpUtil.getParameterValue(req, "version");
             if (version == null) {
                 queryString = queryString.concat("&version=\"2.0.0\"");//TODO queryString is not used
             }
@@ -244,28 +244,6 @@ public class Service implements ServletContextAware, ServletConfigAware {
         else {
             writer.write(capsResp.getBody());
         }
-    }
-
-    private String getParameterValue(HttpServletRequest req, String key){
-
-        String value = null;
-
-        Map<String, String[]> parameterMap = req.getParameterMap();
-
-        Iterator<String> parameterKeyIterator = parameterMap.keySet().iterator();
-
-        while (parameterKeyIterator.hasNext()) {
-            String parameterKey = (String) parameterKeyIterator.next();
-
-            if(parameterKey.toLowerCase().equals(key.toLowerCase())){
-                String[] possibleValueArray = parameterMap.get(parameterKey);
-                if(possibleValueArray != null && possibleValueArray.length > 0){
-                    return possibleValueArray[0];
-                }
-            }
-        }
-
-        return value;
     }
 
 }

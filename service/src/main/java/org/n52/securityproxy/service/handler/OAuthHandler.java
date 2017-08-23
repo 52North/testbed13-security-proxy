@@ -48,6 +48,7 @@ import net.opengis.wfs.x20.TransactionDocument;
 import net.opengis.wps.x20.DataInputType;
 import net.opengis.wps.x20.DescribeProcessDocument;
 import net.opengis.wps.x20.ExecuteDocument;
+import net.opengis.wps.x20.GetResultDocument;
 import net.opengis.wps.x20.GetStatusDocument;
 import net.opengis.wps.x20.InsertProcessDocument;
 import net.opengis.wps.x20.ReferenceType;
@@ -199,6 +200,36 @@ public class OAuthHandler {
                                     ServiceType.wps);
 //                }
             }
+
+            // GetOutput
+            else if (requestParam.equalsIgnoreCase(RequestType.GetOutput.toString())) {
+                // needs authorization TODO implement
+//                if (config.isAuthorizeGetResult()) {
+//                    String processID = req.getParameter("identifier");
+//
+//                    scopes = checkToken(token, res, publicKey);
+//                    if (scopes == null) {
+//                        return;
+//                    }
+//                    if (checkDescribeProcessScopes(scopes, processID, res)) {
+//                        response =
+//                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
+//                                        ServiceType.wps);
+//                    }
+//                }
+
+                // no authorization
+//                else {
+
+                String id = HttpUtil.getParameterValue(req, "id");
+
+                String backendURL = config.getBackendServiceURL().replace("WebProcessingService", "RetrieveResultServlet");
+
+                    response =
+                            HttpUtil.httpGet(backendURL + "?" + "id=" + id,
+                                    ServiceType.wps);
+//                }
+            }
         }
 
         else if (config.getServiceType() == ServiceType.wfs) {
@@ -245,7 +276,7 @@ public class OAuthHandler {
                 }
             }
 
-            // DescribeFeatureType operation
+            // Transaction operation
             else if (requestParam.equals(RequestType.Transaction.toString())) {
                 if (config.isAuthorizeDescribeFeatureType()) {
                     scopes = checkToken(token, res, publicKey);
@@ -314,11 +345,9 @@ public class OAuthHandler {
 
                     // check scopes and execute, if authorized
                     if (checkExecuteScopes(scopes, processID, res)) {
-                        handleInputs(postRequest);
                         response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                     }
                 } else {
-                    handleInputs(postRequest);
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
                 }
             }
@@ -380,7 +409,7 @@ public class OAuthHandler {
             }
 
             // GetResult
-            else if (postRequest instanceof GetStatusDocument) {
+            else if (postRequest instanceof GetResultDocument) {
 
 //                if (config.isAuthorizeGetResult()) {//TODO implement
 //                    // TODO currently only single processIdentifier supported!
@@ -441,7 +470,7 @@ public class OAuthHandler {
                             ((GetFeatureDocument) postRequest).getGetFeature().getAbstractQueryExpressionArray();
                     for (AbstractQueryExpressionType query : queries) {
                         QueryType expr = (QueryType) query;
-                        Iterator featureTypes = expr.getTypeNames().iterator();
+                        Iterator<?> featureTypes = expr.getTypeNames().iterator();
                         while (featureTypes.hasNext()) {
                             String typeName = (String) featureTypes.next();
                             typeNames.add(typeName);
@@ -472,7 +501,7 @@ public class OAuthHandler {
                             ((GetFeatureDocument) postRequest).getGetFeature().getAbstractQueryExpressionArray();
                     for (AbstractQueryExpressionType query : queries) {
                         QueryType expr = (QueryType) query;
-                        Iterator featureTypes = expr.getTypeNames().iterator();
+                        Iterator<?> featureTypes = expr.getTypeNames().iterator();
                         while (featureTypes.hasNext()) {
                             String typeName = (String) featureTypes.next();
                             typeNames.add(typeName);
@@ -503,7 +532,7 @@ public class OAuthHandler {
                             ((GetFeatureDocument) postRequest).getGetFeature().getAbstractQueryExpressionArray();
                     for (AbstractQueryExpressionType query : queries) {
                         QueryType expr = (QueryType) query;
-                        Iterator featureTypes = expr.getTypeNames().iterator();
+                        Iterator<?> featureTypes = expr.getTypeNames().iterator();
                         while (featureTypes.hasNext()) {
                             String typeName = (String) featureTypes.next();
                             typeNames.add(typeName);
@@ -536,34 +565,6 @@ public class OAuthHandler {
         }
         return;
 
-    }
-
-    private XmlObject handleInputs(XmlObject postRequest) {
-
-        if(postRequest instanceof ExecuteDocument){
-
-            ExecuteDocument doc = (ExecuteDocument)postRequest;
-
-            DataInputType[] inputArray = doc.getExecute().getInputArray();
-
-            for (DataInputType dataInputType : inputArray) {
-
-                if(dataInputType.isSetReference()){
-                    dataInputType = handleInputReference(dataInputType);
-                }
-            }
-
-            return doc;
-        }
-
-        return postRequest;
-    }
-
-    private DataInputType handleInputReference(DataInputType dataInputType) {
-
-        ReferenceType referenceType = dataInputType.getReference();
-
-        return null;
     }
 
     private void handleOperationResponse(ResponseEntity<String> resp,

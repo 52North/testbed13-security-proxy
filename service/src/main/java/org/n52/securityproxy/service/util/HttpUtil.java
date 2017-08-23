@@ -19,7 +19,9 @@ package org.n52.securityproxy.service.util;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.xmlbeans.XmlObject;
@@ -100,4 +102,32 @@ public class HttpUtil {
         }
     }
 
+    /**
+     * Retrieves parameter values from http query strings
+     *
+     * @param req The request
+     * @param key The kay
+     * @return the parameter value belonging to the key
+     */
+    public static String getParameterValue(HttpServletRequest req, String key){
+
+        String value = null;
+
+        Map<String, String[]> parameterMap = req.getParameterMap();
+
+        Iterator<String> parameterKeyIterator = parameterMap.keySet().iterator();
+
+        while (parameterKeyIterator.hasNext()) {
+            String parameterKey = (String) parameterKeyIterator.next();
+
+            if(parameterKey.toLowerCase().equals(key.toLowerCase())){
+                String[] possibleValueArray = parameterMap.get(parameterKey);
+                if(possibleValueArray != null && possibleValueArray.length > 0){
+                    return possibleValueArray[0];
+                }
+            }
+        }
+
+        return value;
+    }
 }
