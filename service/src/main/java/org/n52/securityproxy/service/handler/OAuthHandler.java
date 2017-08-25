@@ -97,7 +97,7 @@ public class OAuthHandler {
             InputStream publicKey) throws IOException {
         String token = req.getHeader("Authorization");
         List<String> scopes = null;
-        String requestParam = req.getParameter("request");
+        String requestParam = HttpUtil.getParameterValue(req, "request");
         ResponseEntity<String> response = null;
 
         if (config.getServiceType() == ServiceType.wps) {
@@ -106,7 +106,7 @@ public class OAuthHandler {
 
                 // needs authorization
                 if (config.isAuthorizeExecute()) {
-                    String processID = req.getParameter("identifier");
+                    String processID = HttpUtil.getParameterValue(req, "identifier");
                     scopes = checkToken(token, res, publicKey);
                     if (scopes == null) {
                         return;
@@ -130,7 +130,7 @@ public class OAuthHandler {
             else if (requestParam.equalsIgnoreCase(RequestType.DescribeProcess.toString())) {
                 // needs authorization
                 if (config.isAuthorizeDescribeProcess()) {
-                    String processID = req.getParameter("identifier");
+                    String processID = HttpUtil.getParameterValue(req, "identifier");
 
                     scopes = checkToken(token, res, publicKey);
                     if (scopes == null) {
@@ -155,7 +155,7 @@ public class OAuthHandler {
             else if (requestParam.equalsIgnoreCase(RequestType.GetStatus.toString())) {
                 // needs authorization TODO implement
 //                if (config.isAuthorizeGetStatus()) {
-//                    String processID = req.getParameter("identifier");
+//                    String processID = HttpUtil.getParameterValue(req, "identifier");
 //
 //                    scopes = checkToken(token, res, publicKey);
 //                    if (scopes == null) {
@@ -180,7 +180,7 @@ public class OAuthHandler {
             else if (requestParam.equalsIgnoreCase(RequestType.GetResult.toString())) {
                 // needs authorization TODO implement
 //                if (config.isAuthorizeGetResult()) {
-//                    String processID = req.getParameter("identifier");
+//                    String processID = HttpUtil.getParameterValue(req, "identifier");
 //
 //                    scopes = checkToken(token, res, publicKey);
 //                    if (scopes == null) {
@@ -205,7 +205,7 @@ public class OAuthHandler {
             else if (requestParam.equalsIgnoreCase(RequestType.GetOutput.toString())) {
                 // needs authorization TODO implement
 //                if (config.isAuthorizeGetResult()) {
-//                    String processID = req.getParameter("identifier");
+//                    String processID = HttpUtil.getParameterValue(req, "identifier");
 //
 //                    scopes = checkToken(token, res, publicKey);
 //                    if (scopes == null) {
@@ -233,7 +233,7 @@ public class OAuthHandler {
         }
 
         else if (config.getServiceType() == ServiceType.wfs) {
-            String typeName = req.getParameter("typeName");
+            String typeName = HttpUtil.getParameterValue(req, "typeName");
             List<String> typeNames = new ArrayList<String>();
             typeNames.add(typeName);
 
