@@ -33,6 +33,7 @@ import net.opengis.wps.x20.GetCapabilitiesDocument;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.n52.securityproxy.service.handler.AWSHandler;
 import org.n52.securityproxy.service.handler.CapabilitiesInjector;
 import org.n52.securityproxy.service.handler.OAuthHandler;
 import org.n52.securityproxy.service.handler.X509Handler;
@@ -90,6 +91,15 @@ public class Service implements ServletContextAware, ServletConfigAware {
             res.getWriter().write(
                     "Wrong service type! Service is " + config.getServiceType().toString() + ". Requested service is: "
                             + serviceParam);
+            return;
+        }
+
+        if (serviceParam.equalsIgnoreCase("aws")){
+
+            AWSHandler awsHandler = new AWSHandler();
+
+            awsHandler.get(req, res);
+
             return;
         }
 
