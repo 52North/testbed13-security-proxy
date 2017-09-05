@@ -27,7 +27,7 @@ public class Constants {
      * service types
      */
     public enum ServiceType {
-        wps, wfs
+        wps, wfs, soap
     }
 
     /**

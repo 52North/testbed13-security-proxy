@@ -18,17 +18,11 @@ package org.n52.securityproxy.service;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import net.opengis.wfs.x20.WFSCapabilitiesDocument;
-import net.opengis.wps.x20.CapabilitiesDocument;
-import net.opengis.wps.x20.GetCapabilitiesDocument;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
@@ -48,6 +42,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.ServletConfigAware;
 import org.springframework.web.context.ServletContextAware;
+
+import net.opengis.wfs.x20.WFSCapabilitiesDocument;
+import net.opengis.wps.x20.CapabilitiesDocument;
+import net.opengis.wps.x20.GetCapabilitiesDocument;
 
 @Controller
 @RequestMapping(
@@ -141,7 +139,9 @@ public class Service implements ServletContextAware, ServletConfigAware {
             // if certificate enabled, extract certificate and pass request to
             // X509handler
             if (config.isCertificateEnabled()) {
-                X509Handler handler = new X509Handler();
+//                X509Handler handler = new X509Handler();
+                res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                res.getWriter().write("Require certificate sent in SOAP Header.");
             }
 
             // if OAuth enabled, check whether token is passed; if token is
@@ -179,6 +179,7 @@ public class Service implements ServletContextAware, ServletConfigAware {
             // X509handler
             if (config.isCertificateEnabled()) {
                 X509Handler handler = new X509Handler();
+                handler.post(req, res, postRequest);
             }
 
             // if OAuth enabled, check whether token is passed; if token is
