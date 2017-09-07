@@ -25,6 +25,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.xmlbeans.impl.common.IOUtil;
 import org.n52.securityproxy.service.util.HttpUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
@@ -38,9 +40,13 @@ import com.amazonaws.services.s3.model.S3Object;
 
 public class AWSHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AWSHandler.class);
+
     private AmazonS3 s3;
 
     public AWSHandler(){
+
+        LOGGER.debug("User Home: " + System.getProperty("user.home"));
 
         AWSCredentials credentials = null;
         try {
