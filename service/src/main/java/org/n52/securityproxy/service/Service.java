@@ -136,15 +136,15 @@ public class Service implements ServletContextAware, ServletConfigAware {
         // other requests than GetCapabilities
         else {
 
-            String version = HttpUtil.getParameterValue(req, "version");
-            if (version == null) {
-                queryString = queryString.concat("&version=\"2.0.0\"");//TODO queryString is not used
-            }
-            if (version != null && !version.equals("2.0.0")) {
-                res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                res.getWriter().write("Service only supports version 2.0.0. Requested version was " + version + ".");
-                return;
-            }
+//            String version = HttpUtil.getParameterValue(req, "version");
+//            if (version == null) {
+//                queryString = queryString.concat("&version=\"2.0.0\"");//TODO queryString is not used
+//            }
+//            if (version != null && !version.equals("2.0.0")) {
+//                res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+//                res.getWriter().write("Service only supports version 2.0.0. Requested version was " + version + ".");
+//                return;
+//            }
 
             // if certificate enabled, extract certificate and pass request to
             // X509handler
