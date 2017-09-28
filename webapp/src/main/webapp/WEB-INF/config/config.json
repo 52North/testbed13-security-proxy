@@ -1,7 +1,7 @@
 {
-  "serviceType":"soap",
-  "backendServiceURL":"http://localhost:8080/wps/WebProcessingService",
-  "securityProxyURL":"http://localhost:8080/SecurityProxy/service/soap",
+  "serviceType":"aws",
+  "backendServiceURL":"",
+  "securityProxyURL":"",
   "OAuth":{
   	"OAuthEnabled":false,
   	"authorizationServer":"http://my.server.com/authorize",

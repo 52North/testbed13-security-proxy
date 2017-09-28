@@ -20,11 +20,11 @@
 <SimplePermissions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns="http://www.52north.org/security/simple-permission/1.0">
 	<PermissionSet name="AWS1 Permission">
-		<ResourceDomain value="https://s3-eu-west-1.amazonaws.com/testbed13-osm/manhattan/" />
-		<ActionDomain value="https://s3-eu-west-1.amazonaws.com/testbed13-osm/manhattan/" />
+		<ResourceDomain value="https://s3-eu-west-1.amazonaws.com/testbed13-osm/" />
+		<ActionDomain value="https://s3-eu-west-1.amazonaws.com/testbed13-osm/" />
 		<SubjectDomain value="urn:n52:security:subject:role" />
 		<Permission name="e.h.juerrens_GetObject">
-			<Resource value="osm-manhattan-roads.osm" />
+			<Resource value="manhattan/osm-manhattan-roads.osm" />
 			<Action value="GetObject" />
 			<Subject value="e.h.juerrens" />
 		</Permission>

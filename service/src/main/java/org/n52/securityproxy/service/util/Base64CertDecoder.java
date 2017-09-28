@@ -23,13 +23,12 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.security.cert.CertificateException;
 
 public class Base64CertDecoder {
 
@@ -63,7 +62,7 @@ public class Base64CertDecoder {
     }
 
     public Base64CertDecoder decodeBase64EndodedClientCertificateString(String base64EncodedCertificate)
-            throws CertificateException, KeyStoreException, NoSuchAlgorithmException, java.security.cert.CertificateException, IOException {
+            throws CertificateException, KeyStoreException, NoSuchAlgorithmException, IOException {
 
         ByteArrayInputStream inputStream  =  new ByteArrayInputStream(base64EncodedCertificate.getBytes());
 

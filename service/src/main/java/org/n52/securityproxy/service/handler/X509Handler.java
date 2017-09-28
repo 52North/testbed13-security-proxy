@@ -52,6 +52,8 @@ public class X509Handler {
 
     private String toURL;
 
+    private final String certificateHeader = "X-SSL-CERT";
+
     // public void get(HttpServletRequest req,
     // HttpServletResponse res) {
     // readCertificate(req);
@@ -124,12 +126,12 @@ public class X509Handler {
     public void get(HttpServletRequest req,
             HttpServletResponse res) {
 
-        String sslcert = req.getHeader("X-SSL-CERT");
+        String sslcert = req.getHeader(certificateHeader);
 
         if(sslcert == null){
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             try {
-                res.getWriter().write("Could not fetch certificate from header: " + "X-SSL-CERT");
+                res.getWriter().write("Could not fetch certificate from header: " + certificateHeader);
             } catch (IOException e) {
                 // ignore
             }
@@ -148,7 +150,7 @@ public class X509Handler {
 
             principalName = base64CertDecoder.getPrincipalCN();
 
-        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | javax.security.cert.CertificateException | IOException e) {
+        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException  | IOException e) {
 
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             try {
@@ -157,7 +159,30 @@ public class X509Handler {
                 // ignore
             }
         }
+    }
 
+    public void getCertificateFromRequest(HttpServletRequest req) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
 
+        String sslcert = req.getHeader(certificateHeader);
+
+        if (sslcert == null) {
+            throw new CertificateException("No certificate in header: " + certificateHeader);
+        }
+
+        String lineSeperator = System.getProperty("line.separator");
+
+        sslcert = sslcert.replace("-----BEGIN CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" + lineSeperator);
+        sslcert = sslcert.replace("-----END CERTIFICATE-----", lineSeperator + "-----END CERTIFICATE-----");
+
+        Base64CertDecoder base64CertDecoder = new Base64CertDecoder().decodeBase64EndodedClientCertificateString(sslcert);
+
+        cert = base64CertDecoder.getCertificate();
+
+        principalName = base64CertDecoder.getPrincipalCN();
+
+    }
+
+    public String getPrincipalName() {
+        return principalName;
     }
 }

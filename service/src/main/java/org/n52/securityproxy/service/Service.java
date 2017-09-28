@@ -17,6 +17,7 @@
 package org.n52.securityproxy.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletConfig;
@@ -27,6 +28,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.n52.securityproxy.model.SimplePermission;
+import org.n52.securityproxy.model.SimplePermissionsParser;
 import org.n52.securityproxy.service.handler.AWSHandler;
 import org.n52.securityproxy.service.handler.CapabilitiesInjector;
 import org.n52.securityproxy.service.handler.OAuthHandler;
@@ -94,9 +97,27 @@ public class Service implements ServletContextAware, ServletConfigAware {
 
         if (serviceParam.equalsIgnoreCase("aws")){
 
+            String commonName = "";
+
+            if (config.isCertificateEnabled()) {
+                X509Handler handler = new X509Handler();
+                try {
+                    handler.getCertificateFromRequest(req);
+                } catch (Exception e) {
+                    res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    res.getWriter().write("You are not authorized to access this resource.");
+                    return;
+                }
+                commonName = handler.getPrincipalName();
+            }
+
+            InputStream in = ctx.getResourceAsStream("/WEB-INF/classes/permissions.xml");
+
+            SimplePermission simplePermission = new SimplePermissionsParser().parse(in);
+
             AWSHandler awsHandler = new AWSHandler();
 
-            awsHandler.get(req, res);
+            awsHandler.get(req, res, simplePermission, commonName);
 
             return;
         }
@@ -149,9 +170,8 @@ public class Service implements ServletContextAware, ServletConfigAware {
             // if certificate enabled, extract certificate and pass request to
             // X509handler
             if (config.isCertificateEnabled()) {
-//                X509Handler handler = new X509Handler();
-                res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                res.getWriter().write("Require certificate sent in SOAP Header.");
+                X509Handler handler = new X509Handler();
+                handler.get(req, res);
             }
 
             // if OAuth enabled, check whether token is passed; if token is

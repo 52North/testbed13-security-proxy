@@ -24,6 +24,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.xmlbeans.impl.common.IOUtil;
+import org.n52.securityproxy.model.AWSResource;
+import org.n52.securityproxy.model.SimplePermission;
 import org.n52.securityproxy.service.util.HttpUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +46,7 @@ public class AWSHandler {
 
     private AmazonS3 s3;
 
-    public AWSHandler(){
+    public AWSHandler() {
 
         LOGGER.debug("User Home: " + System.getProperty("user.home"));
 
@@ -52,11 +54,8 @@ public class AWSHandler {
         try {
             credentials = new ProfileCredentialsProvider().getCredentials();
         } catch (Exception e) {
-            throw new AmazonClientException(
-                    "Cannot load the credentials from the credential profiles file. " +
-                    "Please make sure that your credentials file is at the correct " +
-                    "location (~/.aws/credentials), and is in valid format.",
-                    e);
+            throw new AmazonClientException("Cannot load the credentials from the credential profiles file. " + "Please make sure that your credentials file is at the correct "
+                    + "location (~/.aws/credentials), and is in valid format.", e);
         }
 
         s3 = new AmazonS3Client(credentials);
@@ -70,26 +69,68 @@ public class AWSHandler {
      *            request to service
      * @param res
      *            response that should be sent to client
+     * @param simplePermission
      * @throws IOException
      *             if response encoding fails
      *
      */
     public void get(HttpServletRequest req,
-            HttpServletResponse res) throws IOException{
+            HttpServletResponse res, SimplePermission simplePermission, String commonName) throws IOException {
 
         String originalRequest = HttpUtil.getParameterValue(req, "url");
 
-        Region usWest2 = Region.getRegion(Regions.EU_WEST_1);//TODO get from Request
+        AWSResource awsResource = createAWSResourceFromURL(originalRequest);
+
+        Region usWest2 = Region.getRegion(Regions.EU_WEST_1);// TODO get from
+                                                             // Request
         s3.setRegion(usWest2);
 
-        String bucketName = "testbed13-osm";//TODO get from Request
-        String key = "manhattan/osm-manhattan-roads.osm";//TODO get from Request
+        String bucketName = awsResource.getBucket();
+        String key = awsResource.getKey();
+
+        if(!checkPermission(awsResource, simplePermission, commonName)){
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            res.getWriter().write("You are not authorized to access this resource.");
+            return;
+        }
 
         S3Object object = s3.getObject(new GetObjectRequest(bucketName, key));
 
         res.setContentType(object.getObjectMetadata().getContentType());
 
         IOUtil.copyCompletely(new InputStreamReader(object.getObjectContent()), new OutputStreamWriter(res.getOutputStream()));
+    }
+
+    public AWSResource createAWSResourceFromURL(String awsURL) {
+
+        int httpsIndex = awsURL.indexOf("https://") + 8;
+        int amazonawsIndex = awsURL.indexOf(".amazonaws.com/");
+
+        String region = awsURL.substring(httpsIndex, amazonawsIndex);
+
+        String bucketAndKey = awsURL.substring(amazonawsIndex + 15);
+
+        String bucket = bucketAndKey.substring(0, bucketAndKey.indexOf("/"));
+        String key = bucketAndKey.substring(bucketAndKey.indexOf("/") + 1, bucketAndKey.length());
+
+        AWSResource resource = new AWSResource(region, bucket, key);
+
+        return resource;
+    }
+
+    private boolean checkPermission(AWSResource awsResource,
+            SimplePermission simplePermission,
+            String commonName) {
+
+        if (!simplePermission.getSubjects().contains(commonName)) {
+            return false;
+        }
+        if (!simplePermission.getResources().contains(awsResource.getKey())) {
+            return false;
+        }
+
+        return true;
+
     }
 
 }
