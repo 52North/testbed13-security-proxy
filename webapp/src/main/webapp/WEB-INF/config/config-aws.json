@@ -1,0 +1,23 @@
+{
+  "serviceType":"aws",
+  "backendServiceURL":"",
+  "securityProxyURL":"",
+  "OAuth":{
+  	"OAuthEnabled":false,
+  	"authorizationServer":"http://my.server.com/authorize",
+  	"authorizeDescribeProcess":false,
+  	"authorizeDescribeProcessIdentifier":false,
+  	 "authorizeExecute":false,
+  	"authorizeExecuteProcessIdentifier":false,
+  	"authorizeInsertProcess":false,
+  	"processIdentifiers":[""],
+  	"authorizeDescribeFeatureTypeName":false,
+  	"authorizeGetFeature":false,
+  	"authorizeGetFeatureTypeName":false,
+  	"authorizeTransaction":false,
+  	"typeNames":[""]
+  },
+  "certificate":{
+  	"certificateEnabled": true
+  }
+}

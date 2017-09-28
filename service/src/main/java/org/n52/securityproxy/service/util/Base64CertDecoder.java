@@ -23,6 +23,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.regex.Matcher;
@@ -58,6 +59,16 @@ public class Base64CertDecoder {
                 this.certificate = (X509Certificate) certificate;
             }
         }
+        return this;
+    }
+
+    public Base64CertDecoder decodeBase64EndodedClientCertificateString(String base64EncodedCertificate)
+            throws CertificateException, KeyStoreException, NoSuchAlgorithmException, java.security.cert.CertificateException, IOException {
+
+        ByteArrayInputStream inputStream  =  new ByteArrayInputStream(base64EncodedCertificate.getBytes());
+
+        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+        this.certificate = (X509Certificate)certFactory.generateCertificate(inputStream);
         return this;
     }
 

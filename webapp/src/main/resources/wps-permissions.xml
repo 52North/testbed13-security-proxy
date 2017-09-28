@@ -19,13 +19,13 @@
 -->
 <SimplePermissions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns="http://www.52north.org/security/simple-permission/1.0">
-	<PermissionSet name="AWS1 Permission">
-		<ResourceDomain value="https://s3-eu-west-1.amazonaws.com/testbed13-osm/manhattan/" />
-		<ActionDomain value="https://s3-eu-west-1.amazonaws.com/testbed13-osm/manhattan/" />
+	<PermissionSet name="WMS1 Permission">
+		<ResourceDomain value="http://localhost:8080/wps/WebProcessingService" />
+		<ActionDomain value="http://localhost:8080/wps/WebProcessingService" />
 		<SubjectDomain value="urn:n52:security:subject:role" />
-		<Permission name="e.h.juerrens_GetObject">
-			<Resource value="osm-manhattan-roads.osm" />
-			<Action value="GetObject" />
+		<Permission name="bob_Execute">
+			<Resource value="org.n52.wps.server.algorithm.SimpleBufferAlgorithm" />
+			<Action value="Execute" />
 			<Subject value="e.h.juerrens" />
 		</Permission>
 	</PermissionSet>

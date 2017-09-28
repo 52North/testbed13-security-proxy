@@ -17,7 +17,11 @@
 package org.n52.securityproxy.service.handler;
 
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -64,7 +68,7 @@ public class X509Handler {
             }
 
             ResponseEntity<String> response = forwardRequest();
-            
+
             HttpUtil.setHeaders(res, response);
 
             String content = response.getBody();
@@ -115,5 +119,45 @@ public class X509Handler {
         } catch (Exception e) {
             LOGGER.error("Could not parse SOAP request.", e);
         }
+    }
+
+    public void get(HttpServletRequest req,
+            HttpServletResponse res) {
+
+        String sslcert = req.getHeader("X-SSL-CERT");
+
+        if(sslcert == null){
+            res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            try {
+                res.getWriter().write("Could not fetch certificate from header: " + "X-SSL-CERT");
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+
+        String lineSeperator = System.getProperty("line.separator");
+
+        sslcert = sslcert.replace("-----BEGIN CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" + lineSeperator);
+        sslcert = sslcert.replace("-----END CERTIFICATE-----", lineSeperator + "-----END CERTIFICATE-----");
+
+        Base64CertDecoder base64CertDecoder;
+        try {
+            base64CertDecoder = new Base64CertDecoder().decodeBase64EndodedClientCertificateString(sslcert);
+
+            cert = base64CertDecoder.getCertificate();
+
+            principalName = base64CertDecoder.getPrincipalCN();
+
+        } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | javax.security.cert.CertificateException | IOException e) {
+
+            res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            try {
+                res.getWriter().write("Could not decode certificate: " + sslcert);
+            } catch (IOException e2) {
+                // ignore
+            }
+        }
+
+
     }
 }
