@@ -1,0 +1,18 @@
+== OAuth Scopes
+
+Scopes were defined on two levels: (1) operation and (2) feature type/process level. On the operation level, we defined scopes like Execute, DescribeProcess or GetFeature. If a client is authorized for the respective scope, it can call the operation with no limitation, e.g. call Execute on all processes or get all feature types. To allow more fine-grained access control, we defined scopes on feature type/process level. The scheme for these scopes is: Operation/AttributeName=AttributeValue, e.g. Execute/ProcessID=my.process or DescribeFeatureType/TypeName=my.feature.
+
+Scopes defined for WFS:
+
+|=======================
+| *Name* | *Description*
+|GetFeature|Perform GetFeature operation
+|Transaction/action=insert|Perform insert feature operation
+|GetFeature/TypeName=tb13:tnm-manhattan-streets-wgs84 | Perform GetFeature operation on layer tnm-manhattan-streets-wgs84 
+|GetFeature/TypeName=tb13:manhattan-streets-reference|Perform GetFeature operation on layer tb13:manhattan-streets-reference
+|GetFeature/TypeName=topp:tasmania_roads|Perform GetFeature operation on layer topp:tasmania_roads 
+|GetFeature/TypeName=tb13:tnm-manhattan-streets|Perform GetFeature operation on layer tb13:tnm-manhattan-streets
+|GetFeature/TypeName=tb13:osm-manhattan-streets|Perform GetFeature operation on layer tb13:osm-manhattan-streets 
+|GetFeature/TypeName=tb13:lion-manhattan-streets|Perform GetFeature operation on layer lion-manhattan-streets
+|GetFeature/TypeName=tb13:un-zataari-roads|Perform GetFeature operation on layer un-zataari-roads
+|=======================
