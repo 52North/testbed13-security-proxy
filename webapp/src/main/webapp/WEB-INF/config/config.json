@@ -1,24 +1,22 @@
 {
-  "serviceType":"wfs",
-  "backendServiceURL":"http://tb12.dev.52north.org:80/geoserver/tb13/wfs",
-  "securityProxyURL":"http://localhost:8080/SecurityProxy/service/wfs",
+  "serviceType":"wps",
+  "backendServiceURL":"http://localhost:8080/wps/WebProcessingService",
+  "securityProxyURL":"http://localhost:8080/SecurityProxy",
   "OAuth":{
   	"OAuthEnabled":true,
-  	"authorizationServer":"http://my.server.com/authorize",
+  	"authorizationServer":"https://bpross-52n.eu.auth0.com/authorize",
   	"authorizeDescribeProcess":false,
   	"authorizeDescribeProcessIdentifier":false,
-  	 "authorizeExecute":true,
-  	"authorizeExecuteProcessIdentifier":true,
+  	"authorizeExecute":true,
+  	"authorizeExecuteProcessIdentifier":false,
   	"authorizeInsertProcess":true,
-  	"processIdentifiers":[
-  	"org.n52.geoprocessing.geotools.algorithm.CoordinateTransformationAlgorithm"],
+  	"processIdentifiers":["org.n52.geoprocessing.project.testbed14.gait.GenericGaitToolAlgorithm"],
   	"authorizeDescribeFeatureType":true,
   	"authorizeDescribeFeatureTypeName":true,
   	"authorizeGetFeature":true,
   	"authorizeGetFeatureTypeName":false,
   	"authorizeTransaction":false,
-  	"typeNames":[
-  	"tb13:tnm-manhattan-streets"]
+  	"typeNames":[""]
   },
   "certificate":{
   	"certificateEnabled": false
