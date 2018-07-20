@@ -711,6 +711,7 @@ public class OAuthHandler {
             res.getWriter().write("OAuth access token is needed to request this service operation.");
             return null;
         } else {
+            token = token.replace("Bearer ", "");
             List<String> scopes;
             try {
                 scopes = OAuthUtil.getScopesFromToken(publicKey, token, "https://bpross-52n.eu.auth0.com/");
