@@ -75,6 +75,10 @@ public class SecurityProxyConfiguration {
     private boolean authorizeDescribeFeatureTypeName;
 
     private boolean authorizeTransaction;
+    
+    private boolean userAuthentication;
+    
+    private String userInfoEndpoint;
 
     private SecurityProxyConfiguration(InputStream configJSON) {
         parseConfig(configJSON);
@@ -173,6 +177,10 @@ public class SecurityProxyConfiguration {
             processIdentifiers = parseStringArray(root.findPath("processIdentifiers").elements());
 
             typeNames = parseStringArray(root.findPath("typeNames").elements());
+            
+            userAuthentication = root.findPath("userAuthentication").asBoolean();
+            
+            userInfoEndpoint = root.findPath("userInfoEndpoint").asText();
         } catch (Exception e) {
             LOGGER.error("Error while reading SecurityProxyConfiguration!");
             throw new RuntimeException("Error while reading SecurityProxyConfiguration!");
@@ -228,5 +236,21 @@ public class SecurityProxyConfiguration {
 
     public boolean isAuthorizeInsertProcess() {
         return authorizeInsertProcess;
+    }
+
+    public boolean isUserAuthentication() {
+        return userAuthentication;
+    }
+
+    public void setUserAuthentication(boolean userAuthentication) {
+        this.userAuthentication = userAuthentication;
+    }
+
+    public String getUserInfoEndpoint() {
+        return userInfoEndpoint;
+    }
+
+    public void setUserInfoEndpoint(String userInfoEndpoint) {
+        this.userInfoEndpoint = userInfoEndpoint;
     }
 }

@@ -83,5 +83,11 @@ public class OAuthUtil {
         LOGGER.info(scopeText);
         return scopes;
     }
+    
+    public static String getUserNameFromAccessToken(String accessToken){
+        
+        return "";
+        
+    }
 
 }

@@ -96,6 +96,7 @@ public class OAuthHandler {
             HttpServletResponse res,
             InputStream publicKey) throws IOException {
         String token = req.getHeader("Authorization");
+        token = token.replace("Bearer ", "");
         List<String> scopes = null;
         String requestParam = HttpUtil.getParameterValue(req, "request");
         ResponseEntity<String> response = null;
@@ -106,15 +107,24 @@ public class OAuthHandler {
 
                 // needs authorization
                 if (config.isAuthorizeExecute()) {
-                    String processID = HttpUtil.getParameterValue(req, "identifier");
-                    scopes = checkToken(token, res, publicKey);
-                    if (scopes == null) {
-                        return;
-                    }
-                    if (checkExecuteScopes(scopes, processID, res)) {
-                        response =
-                                HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(),
-                                        ServiceType.wps);
+                    
+                    boolean isUserAuthentication = config.isUserAuthentication();
+                    
+                    if (isUserAuthentication) {
+                        
+                        //check access token against userInfoEndpoint
+                        checkAccessToken(token);
+
+                    } else {
+
+                        String processID = HttpUtil.getParameterValue(req, "identifier");
+                        scopes = checkToken(token, res, publicKey);
+                        if (scopes == null) {
+                            return;
+                        }
+                        if (checkExecuteScopes(scopes, processID, res)) {
+                            response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(), ServiceType.wps);
+                        }
                     }
                 }
 
@@ -711,7 +721,6 @@ public class OAuthHandler {
             res.getWriter().write("OAuth access token is needed to request this service operation.");
             return null;
         } else {
-            token = token.replace("Bearer ", "");
             List<String> scopes;
             try {
                 scopes = OAuthUtil.getScopesFromToken(publicKey, token, "https://bpross-52n.eu.auth0.com/");
@@ -726,6 +735,14 @@ public class OAuthHandler {
 
             return scopes;
         }
+    }
+
+    private boolean checkAccessToken(String token) {
+        
+        String userName = OAuthUtil.getUserNameFromAccessToken(token);
+        
+        return true;
+        
     }
 
 }

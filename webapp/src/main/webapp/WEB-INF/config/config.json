@@ -16,7 +16,9 @@
   	"authorizeGetFeature":true,
   	"authorizeGetFeatureTypeName":false,
   	"authorizeTransaction":false,
-  	"typeNames":[""]
+  	"typeNames":[""],
+  	"userAuthentication":true,
+  	"userInfoEndpoint": "https://testbed14-sso.elecnor-deimos.com/oxauth/restv1/userinfo"
   },
   "certificate":{
   	"certificateEnabled": false
