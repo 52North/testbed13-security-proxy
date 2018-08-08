@@ -18,6 +18,8 @@ package org.n52.securityproxy.service.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -30,6 +32,7 @@ import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.MissingNode;
 
 /**
  * provides utility methods for OAuth Token parsing and verification; wraps
@@ -83,11 +86,72 @@ public class OAuthUtil {
         LOGGER.info(scopeText);
         return scopes;
     }
-    
+
     public static String getUserNameFromAccessToken(String accessToken){
-        
-        return "";
-        
+
+        String userInfoEndpoint = SecurityProxyConfiguration.getInstance().getUserInfoEndpoint();
+
+        try {
+            JsonNode response = getJSONFromURLString(createGetUserInfoURL(userInfoEndpoint, accessToken));
+
+            return getUserNameFromJSON(response);
+
+        } catch (IOException e) {
+            LOGGER.error("Could not get JSON from URL: " + userInfoEndpoint, e);
+        } catch (OAuthException e) {
+            LOGGER.error("Could not get User info from URL: " + userInfoEndpoint + " with token " + accessToken, e);
+        }
+
+        return null;
+
+    }
+
+    public static JsonNode getJSONFromURLString(URL url) throws IOException{
+
+        InputStream in = url.openStream();
+
+        ObjectMapper m = new ObjectMapper();
+
+        JsonNode rootNode = m.readTree(in);
+
+        return rootNode;
+    }
+
+    public static String getUserNameFromJSON(JsonNode node) throws OAuthException{
+
+       JsonNode errorNode = node.findPath("error");
+
+       if(errorNode != null && !(errorNode instanceof MissingNode)){
+           JsonNode errorDescriptionNode = node.findPath("error_description");
+
+           String errorDescription = errorDescriptionNode != null ? errorDescriptionNode.asText() : "No error description returned.";
+
+           throw new OAuthException(401, errorDescription);
+       }
+
+       JsonNode userNameNode = node.findPath("user_name");
+
+       if(userNameNode != null && !(userNameNode instanceof MissingNode)){
+           return userNameNode.asText();
+       }else{
+           LOGGER.debug(node.asText());
+           throw new OAuthException(401, "User info request failed.");
+       }
+
+    }
+
+    public static URL createGetUserInfoURL(String userInfoEndpoint, String token) throws IllegalArgumentException{
+
+        String userInfoURLString = userInfoEndpoint + "?access_token=" + token;
+
+        try {
+            URL userInfoURL = new URL(userInfoURLString);
+            return userInfoURL;
+        } catch (MalformedURLException e) {
+            LOGGER.error("Could not create URL from: " + userInfoURLString);
+            throw new IllegalArgumentException("URL not valid: " + userInfoURLString);
+        }
+
     }
 
 }

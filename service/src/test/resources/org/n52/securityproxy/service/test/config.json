@@ -1,6 +1,6 @@
 {
   "serviceType":"wps",
-  "backendServiceURL":"http://geoprocessing.demo.52north.org:80/wps/WebProcessingService",
+  "backendServiceURL":"https://testbed.dev.52north.org/tb14-d146/WebProcessingService",
   "securityProxyURL":"http://localhost:8080/SecurityProxy",
   "OAuth":{
   	"OAuthEnabled":true,

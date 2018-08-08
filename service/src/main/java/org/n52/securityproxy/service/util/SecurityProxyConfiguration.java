@@ -75,9 +75,9 @@ public class SecurityProxyConfiguration {
     private boolean authorizeDescribeFeatureTypeName;
 
     private boolean authorizeTransaction;
-    
+
     private boolean userAuthentication;
-    
+
     private String userInfoEndpoint;
 
     private SecurityProxyConfiguration(InputStream configJSON) {
@@ -177,9 +177,9 @@ public class SecurityProxyConfiguration {
             processIdentifiers = parseStringArray(root.findPath("processIdentifiers").elements());
 
             typeNames = parseStringArray(root.findPath("typeNames").elements());
-            
+
             userAuthentication = root.findPath("userAuthentication").asBoolean();
-            
+
             userInfoEndpoint = root.findPath("userInfoEndpoint").asText();
         } catch (Exception e) {
             LOGGER.error("Error while reading SecurityProxyConfiguration!");

@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.xmlbeans.XmlObject;
+import org.n52.securityproxy.model.SimplePermission;
 import org.n52.securityproxy.service.util.Constants.RequestType;
 import org.n52.securityproxy.service.util.Constants.ServiceType;
 import org.n52.securityproxy.service.util.HttpUtil;
@@ -45,13 +46,11 @@ import net.opengis.wfs.x20.DescribeFeatureTypeDocument;
 import net.opengis.wfs.x20.GetFeatureDocument;
 import net.opengis.wfs.x20.QueryType;
 import net.opengis.wfs.x20.TransactionDocument;
-import net.opengis.wps.x20.DataInputType;
 import net.opengis.wps.x20.DescribeProcessDocument;
 import net.opengis.wps.x20.ExecuteDocument;
 import net.opengis.wps.x20.GetResultDocument;
 import net.opengis.wps.x20.GetStatusDocument;
 import net.opengis.wps.x20.InsertProcessDocument;
-import net.opengis.wps.x20.ReferenceType;
 
 /**
  * handler for maning request to OAuth secured OGC Web Services. Currently
@@ -96,7 +95,9 @@ public class OAuthHandler {
             HttpServletResponse res,
             InputStream publicKey) throws IOException {
         String token = req.getHeader("Authorization");
-        token = token.replace("Bearer ", "");
+        if(token != null){
+            token = token.replace("Bearer ", "");
+        }
         List<String> scopes = null;
         String requestParam = HttpUtil.getParameterValue(req, "request");
         ResponseEntity<String> response = null;
@@ -107,24 +108,14 @@ public class OAuthHandler {
 
                 // needs authorization
                 if (config.isAuthorizeExecute()) {
-                    
-                    boolean isUserAuthentication = config.isUserAuthentication();
-                    
-                    if (isUserAuthentication) {
-                        
-                        //check access token against userInfoEndpoint
-                        checkAccessToken(token);
 
-                    } else {
-
-                        String processID = HttpUtil.getParameterValue(req, "identifier");
-                        scopes = checkToken(token, res, publicKey);
-                        if (scopes == null) {
-                            return;
-                        }
-                        if (checkExecuteScopes(scopes, processID, res)) {
-                            response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(), ServiceType.wps);
-                        }
+                    String processID = HttpUtil.getParameterValue(req, "identifier");
+                    scopes = checkToken(token, res, publicKey);
+                    if (scopes == null) {
+                        return;
+                    }
+                    if (checkExecuteScopes(scopes, processID, res)) {
+                        response = HttpUtil.httpGet(config.getBackendServiceURL() + "?" + req.getQueryString(), ServiceType.wps);
                     }
                 }
 
@@ -329,6 +320,7 @@ public class OAuthHandler {
      *            stream to public key that is needed for token verification
      * @param postRequest
      *            request XML bean
+     * @param simplePermission
      * @throws IOException
      *             if reading token or XML request fails
      *
@@ -336,8 +328,11 @@ public class OAuthHandler {
     public void post(HttpServletRequest req,
             HttpServletResponse res,
             InputStream publicKey,
-            XmlObject postRequest) throws IOException {
+            XmlObject postRequest, SimplePermission simplePermission) throws IOException {
         String token = req.getHeader("Authorization");
+        if(token != null){
+            token = token.replace("Bearer ", "");
+        }
         List<String> scopes = null;
         ResponseEntity<String> response = null;
 
@@ -347,15 +342,27 @@ public class OAuthHandler {
             // Execute operation
             if (postRequest instanceof ExecuteDocument) {
                 if (config.isAuthorizeExecute()) {
-                    String processID = ((ExecuteDocument) postRequest).getExecute().getIdentifier().getStringValue();
-                    scopes = checkToken(token, res, publicKey);
-                    if (scopes == null) {
-                        return;
-                    }
 
-                    // check scopes and execute, if authorized
-                    if (checkExecuteScopes(scopes, processID, res)) {
-                        response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                    boolean isUserAuthentication = config.isUserAuthentication();
+
+                    if (isUserAuthentication) {
+
+                        // check access token against userInfoEndpoint
+                        if(checkAccessToken(token, simplePermission, res)){
+                            response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                        }
+                    } else {
+
+                        String processID = ((ExecuteDocument) postRequest).getExecute().getIdentifier().getStringValue();
+                        scopes = checkToken(token, res, publicKey);
+                        if (scopes == null) {
+                            return;
+                        }
+
+                        // check scopes and execute, if authorized
+                        if (checkExecuteScopes(scopes, processID, res)) {
+                            response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
+                        }
                     }
                 } else {
                     response = HttpUtil.httpPost(config.getBackendServiceURL(), postRequest);
@@ -737,12 +744,19 @@ public class OAuthHandler {
         }
     }
 
-    private boolean checkAccessToken(String token) {
-        
+    private boolean checkAccessToken(String token, SimplePermission simplePermission,
+            HttpServletResponse res) throws IOException {
+
         String userName = OAuthUtil.getUserNameFromAccessToken(token);
-        
+
+        if(!simplePermission.getSubjects().contains(userName)){
+            res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            res.getWriter().write("User doesn't have access to requested resource or operation.");
+            return false;
+        }
+
         return true;
-        
+
     }
 
 }

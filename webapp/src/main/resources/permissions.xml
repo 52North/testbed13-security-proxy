@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright 2017-2018 52°North Initiative for Geospatial Open Source
+    Software GmbH
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<SimplePermissions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.52north.org/security/simple-permission/1.0">
+	<PermissionSet name="QA Tools WPS Permission">
+		<ResourceDomain value="https://testbed.dev.52north.org/tb14-d146-secured/service/wps" />
+		<ActionDomain value="https://testbed.dev.52north.org/tb14-d146-secured/service/wps" />
+		<SubjectDomain value="urn:n52:security:subject:role" />
+		<Permission name="tb14guest_Execute_GAIT_Tool_process">
+			<Resource value="org.n52.geoprocessing.project.testbed14.gait.GenericGaitToolAlgorithm" />
+			<Action value="Execute" />
+			<Subject value="tb14guest" />
+		</Permission>
+	</PermissionSet>
+</SimplePermissions>

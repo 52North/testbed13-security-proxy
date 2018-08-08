@@ -17,22 +17,19 @@
 package org.n52.securityproxy.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.opengis.wfs.x20.WFSCapabilitiesDocument;
-import net.opengis.wps.x20.CapabilitiesDocument;
-import net.opengis.wps.x20.GetCapabilitiesDocument;
-
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
+import org.n52.securityproxy.model.SimplePermission;
+import org.n52.securityproxy.model.SimplePermissionsParser;
 import org.n52.securityproxy.service.handler.CapabilitiesInjector;
 import org.n52.securityproxy.service.handler.OAuthHandler;
 import org.n52.securityproxy.service.handler.X509Handler;
@@ -48,6 +45,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.ServletConfigAware;
 import org.springframework.web.context.ServletContextAware;
+
+import net.opengis.wfs.x20.WFSCapabilitiesDocument;
+import net.opengis.wps.x20.CapabilitiesDocument;
+import net.opengis.wps.x20.GetCapabilitiesDocument;
 
 @Controller
 @RequestMapping(
@@ -185,8 +186,12 @@ public class Service implements ServletContextAware, ServletConfigAware {
             // missing, return
             if (config.isOauthEnabled()) {
 
+                InputStream in = ctx.getResourceAsStream("/WEB-INF/classes/permissions.xml");
+
+                SimplePermission simplePermission = in == null? null : new SimplePermissionsParser().parse(in);
+
                 OAuthHandler handler = new OAuthHandler();
-                handler.post(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"), postRequest);
+                handler.post(req, res, ctx.getResourceAsStream("/WEB-INF/pubkey/pubkey.pem"), postRequest, simplePermission);
             }
 
         }
