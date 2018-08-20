@@ -97,6 +97,7 @@ public class OAuthHandler {
         String token = req.getHeader("Authorization");
         if(token != null){
             token = token.replace("Bearer ", "");
+            LOGGER.debug("Got token.");
         }
         List<String> scopes = null;
         String requestParam = HttpUtil.getParameterValue(req, "request");
@@ -331,6 +332,7 @@ public class OAuthHandler {
             XmlObject postRequest, SimplePermission simplePermission) throws IOException {
         String token = req.getHeader("Authorization");
         if(token != null){
+            LOGGER.debug("Got token.");
             token = token.replace("Bearer ", "");
         }
         List<String> scopes = null;

@@ -163,9 +163,11 @@ public class Service implements ServletContextAware, ServletConfigAware {
             HttpServletRequest req,
             HttpServletResponse res) throws Exception {
 
-        LOGGER.info("Incoming request for service with id: " + serviceId);
+        LOGGER.info("Incoming post request for service with id: " + serviceId);
 
         XmlObject postRequest = XmlObject.Factory.parse(req.getInputStream());
+
+        LOGGER.debug(postRequest.xmlText());
 
         // GetCapabilities Request
         if (postRequest instanceof GetCapabilitiesDocument
